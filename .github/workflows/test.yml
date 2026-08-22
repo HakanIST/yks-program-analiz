@@ -1,0 +1,40 @@
+name: Testler
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Bağımlılıklar
+        run: python3 -m pip install -r tools/requirements.txt pandas
+
+      - name: Veri setini ham veriden yeniden üret
+        run: python3 tools/build_dataset.py --girdi data/raw/yks-ham.csv.gz
+
+      - name: Üretilen veri depodakiyle aynı mı
+        run: |
+          if ! git diff --quiet -- docs/data/meta.json docs/data/records.json; then
+            echo "::error::docs/data içeriği ham veriyle uyuşmuyor; build_dataset.py çalıştırılıp sonuç işlenmeli."
+            git diff --stat -- docs/data
+            exit 1
+          fi
+
+      - name: Beklenen sonuçları pandas ile üret
+        run: python3 tools/tests/groundtruth.py
+
+      - name: Sıralama motoru testleri
+        run: node tools/tests/ranking.test.mjs

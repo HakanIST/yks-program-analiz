@@ -1,0 +1,298 @@
+{
+ "kaynak": "yks-ham.csv.gz",
+ "durumlar": [
+  {
+   "ad": "Psikoloji · Türkiye geneli · puan",
+   "program": "Psikoloji",
+   "bolge": {
+    "tip": "TR"
+   },
+   "tur": {
+    "tip": "YURTICI_HEPSI"
+   },
+   "olcut": "puan",
+   "ozet": {
+    "universite": 138,
+    "kontenjan": 62184,
+    "yerlesen": 59265
+   },
+   "ilk10": [
+    [
+     "İHSAN DOĞRAMACI BİLKENT ÜNİVERSİTESİ",
+     537.2641
+    ],
+    [
+     "BOĞAZİÇİ ÜNİVERSİTESİ",
+     532.4474
+    ],
+    [
+     "KOÇ ÜNİVERSİTESİ",
+     532.2999
+    ],
+    [
+     "ORTA DOĞU TEKNİK ÜNİVERSİTESİ",
+     520.4505
+    ],
+    [
+     "ÖZYEĞİN ÜNİVERSİTESİ",
+     495.2038
+    ],
+    [
+     "TOBB EKONOMİ VE TEKNOLOJİ ÜNİVERSİTESİ",
+     485.3249
+    ],
+    [
+     "MARMARA ÜNİVERSİTESİ",
+     478.3142
+    ],
+    [
+     "BAHÇEŞEHİR ÜNİVERSİTESİ",
+     472.6143
+    ],
+    [
+     "HACETTEPE ÜNİVERSİTESİ",
+     471.3487
+    ],
+    [
+     "İBN HALDUN ÜNİVERSİTESİ",
+     470.2971
+    ]
+   ]
+  },
+  {
+   "ad": "Psikoloji · İstanbul vakıf · puan",
+   "program": "Psikoloji",
+   "bolge": {
+    "tip": "IST"
+   },
+   "tur": {
+    "tip": "GRUP",
+    "deger": "vakif"
+   },
+   "olcut": "puan",
+   "ozet": {
+    "universite": 42,
+    "kontenjan": 24510,
+    "yerlesen": 22090
+   },
+   "ilk10": [
+    [
+     "KOÇ ÜNİVERSİTESİ",
+     532.2999
+    ],
+    [
+     "ÖZYEĞİN ÜNİVERSİTESİ",
+     495.2038
+    ],
+    [
+     "BAHÇEŞEHİR ÜNİVERSİTESİ",
+     472.6143
+    ],
+    [
+     "İBN HALDUN ÜNİVERSİTESİ",
+     470.2971
+    ],
+    [
+     "YEDİTEPE ÜNİVERSİTESİ",
+     466.2972
+    ],
+    [
+     "İSTANBUL BİLGİ ÜNİVERSİTESİ",
+     461.476
+    ],
+    [
+     "KADİR HAS ÜNİVERSİTESİ",
+     446.9311
+    ],
+    [
+     "ACIBADEM MEHMET ALİ AYDINLAR ÜNİVERSİTESİ",
+     435.5915
+    ],
+    [
+     "İSTANBUL MEDİPOL ÜNİVERSİTESİ",
+     432.8746
+    ],
+    [
+     "ÜSKÜDAR ÜNİVERSİTESİ",
+     429.4644
+    ]
+   ]
+  },
+  {
+   "ad": "Psikoloji · Türkiye geneli · doluluk",
+   "program": "Psikoloji",
+   "bolge": {
+    "tip": "TR"
+   },
+   "tur": {
+    "tip": "YURTICI_HEPSI"
+   },
+   "olcut": "doluluk",
+   "ozet": {
+    "universite": 138,
+    "kontenjan": 62184,
+    "yerlesen": 59265
+   },
+   "ilk10": [
+    [
+     "ANKARA MEDİPOL ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "ZONGULDAK BÜLENT ECEVİT ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "İZMİR DEMOKRASİ ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "ÇAĞ ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "SİVAS CUMHURİYET ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "YAŞAR ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "YEDİTEPE ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "ANKARA YILDIRIM BEYAZIT ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "ANKARA ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "İZMİR EKONOMİ ÜNİVERSİTESİ",
+     100.0
+    ]
+   ]
+  },
+  {
+   "ad": "Hemşirelik · vakıf · doluluk",
+   "program": "Hemşirelik",
+   "bolge": {
+    "tip": "TR"
+   },
+   "tur": {
+    "tip": "GRUP",
+    "deger": "vakif"
+   },
+   "olcut": "doluluk",
+   "ozet": {
+    "universite": 54,
+    "kontenjan": 24895,
+    "yerlesen": 24155
+   },
+   "ilk10": [
+    [
+     "ACIBADEM MEHMET ALİ AYDINLAR ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "HASAN KALYONCU ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "BAŞKENT ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "İSTANBUL AYDIN ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "KTO KARATAY ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "SANKO ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "İSTANBUL SABAHATTİN ZAİM ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "İZMİR TINAZTEPE ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "KOCAELİ SAĞLIK VE TEKNOLOJİ ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "MALTEPE ÜNİVERSİTESİ",
+     100.0
+    ]
+   ]
+  },
+  {
+   "ad": "Bilgisayar Mühendisliği · devlet · puan",
+   "program": "Bilgisayar Mühendisliği",
+   "bolge": {
+    "tip": "TR"
+   },
+   "tur": {
+    "tip": "GRUP",
+    "deger": "devlet"
+   },
+   "olcut": "puan",
+   "ozet": {
+    "universite": 107,
+    "kontenjan": 52870,
+    "yerlesen": 52609
+   },
+   "ilk10": [
+    [
+     "BOĞAZİÇİ ÜNİVERSİTESİ",
+     562.0697
+    ],
+    [
+     "İSTANBUL TEKNİK ÜNİVERSİTESİ",
+     561.2064
+    ],
+    [
+     "ORTA DOĞU TEKNİK ÜNİVERSİTESİ",
+     555.1189
+    ],
+    [
+     "HACETTEPE ÜNİVERSİTESİ",
+     529.3465
+    ],
+    [
+     "GALATASARAY ÜNİVERSİTESİ",
+     526.5881
+    ],
+    [
+     "YILDIZ TEKNİK ÜNİVERSİTESİ",
+     526.5055
+    ],
+    [
+     "TÜRK-ALMAN ÜNİVERSİTESİ",
+     522.1127
+    ],
+    [
+     "İZMİR YÜKSEK TEKNOLOJİ ENSTİTÜSÜ",
+     521.2609
+    ],
+    [
+     "TÜRK-JAPON BİLİM VE TEKNOLOJİ ÜNİVERSİTESİ",
+     519.5172
+    ],
+    [
+     "MARMARA ÜNİVERSİTESİ",
+     511.5147
+    ]
+   ]
+  }
+ ]
+}

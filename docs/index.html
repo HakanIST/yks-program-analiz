@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="tr" data-tema="sistem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YKS Program Analiz · 2021–2026</title>
+<meta name="description" content="2021–2026 YKS ilk yerleştirme verileriyle bölüm/program bazında üniversite karşılaştırma paneli. En büyük puan ve doluluk oranına göre ilk 20 sıralaması, yıllık değişim grafikleri.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+<a class="atla" href="#sonuc">İçeriğe atla</a>
+
+<header class="ust">
+  <div class="ust-ic">
+    <div class="marka">
+      <span class="marka-im" aria-hidden="true"></span>
+      <div>
+        <h1>YKS Program Analiz</h1>
+        <p class="marka-alt">ÖSYM ilk yerleştirme verileri · <span id="yil-araligi">2021–2026</span></p>
+      </div>
+    </div>
+    <div class="ust-eylem">
+      <button id="btn-tema" class="ikon-dugme" type="button" title="Açık/koyu tema" aria-label="Temayı değiştir">◐</button>
+      <a class="ikon-dugme" id="repo-baglanti" href="#" rel="noopener" title="Kaynak kod">&lt;/&gt;</a>
+    </div>
+  </div>
+</header>
+
+<div id="yukleniyor" class="yukleniyor" role="status">
+  <div class="spinner" aria-hidden="true"></div>
+  <p>Veri seti yükleniyor…</p>
+</div>
+
+<main id="uygulama" hidden>
+
+  <!-- ------------------------------------------------ filtreler -->
+  <section class="filtreler" aria-label="Filtreler">
+    <div class="filtre-satir birincil">
+      <div class="alan genis">
+        <label for="secim-program">Bölüm / Program</label>
+        <div class="combobox" id="cb-program">
+          <input id="secim-program" type="text" role="combobox" aria-expanded="false" aria-controls="liste-program"
+                 autocomplete="off" placeholder="Program ara… (ör. Psikoloji)">
+          <ul id="liste-program" class="cb-liste" role="listbox" hidden></ul>
+        </div>
+      </div>
+
+      <div class="alan">
+        <label for="secim-kapsam">Üniversite Kapsamı</label>
+        <select id="secim-kapsam"></select>
+      </div>
+
+      <div class="alan">
+        <label for="secim-tur">Üniversite Türü</label>
+        <select id="secim-tur"></select>
+      </div>
+
+      <div class="alan">
+        <label for="secim-olcut">Sıralama Türü</label>
+        <select id="secim-olcut">
+          <option value="puan">En Büyük Puan</option>
+          <option value="doluluk">Doluluk Oranı</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="on-ayarlar" role="group" aria-label="Hazır kapsam seçenekleri">
+      <span class="on-ayar-etiket">Hazır kapsam:</span>
+      <div id="on-ayar-listesi" class="cip-grup"></div>
+    </div>
+
+    <details class="ek-filtreler" id="ek-filtreler">
+      <summary>Ayrıntılı filtreler <span class="rozet" id="ek-filtre-rozet" hidden></span></summary>
+      <div class="filtre-satir">
+        <div class="alan">
+          <label for="secim-seviye">Lisans / Ön Lisans</label>
+          <select id="secim-seviye"></select>
+        </div>
+        <div class="alan">
+          <label for="secim-puanturu">Puan Türü</label>
+          <select id="secim-puanturu"></select>
+        </div>
+        <div class="alan">
+          <label for="secim-dil">Öğretim Dili</label>
+          <select id="secim-dil"></select>
+        </div>
+        <div class="alan">
+          <label for="secim-ucret">Ücret / Burs</label>
+          <select id="secim-ucret"></select>
+        </div>
+        <div class="alan">
+          <label for="secim-ogretim">Öğretim Şekli</label>
+          <select id="secim-ogretim"></select>
+        </div>
+        <div class="alan genis">
+          <label for="secim-takip">Ayrıca gösterilecek üniversite</label>
+          <div class="combobox" id="cb-takip">
+            <input id="secim-takip" type="text" role="combobox" aria-expanded="false" aria-controls="liste-takip"
+                   autocomplete="off" placeholder="Üniversite ara…">
+            <ul id="liste-takip" class="cb-liste" role="listbox" hidden></ul>
+          </div>
+        </div>
+      </div>
+      <div class="filtre-satir">
+        <div class="alan tam">
+          <label>Yıllar</label>
+          <div id="yil-cipleri" class="cip-grup"></div>
+        </div>
+      </div>
+    </details>
+
+    <div class="filtre-alt">
+      <p id="filtre-ozet" class="filtre-ozet"></p>
+      <div class="filtre-eylem">
+        <button id="btn-csv" class="dugme ikincil" type="button">CSV indir</button>
+        <button id="btn-link" class="dugme ikincil" type="button">Bağlantıyı kopyala</button>
+        <button id="btn-sifirla" class="dugme sade" type="button">Filtreleri sıfırla</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------ özet -->
+  <section class="kpi-serit" id="kpi-serit" aria-label="Kategori özeti"></section>
+
+  <!-- ------------------------------------------------ sonuç -->
+  <section id="sonuc" class="sonuc">
+    <div class="tablo-sarmal panel">
+      <div class="panel-baslik">
+        <div>
+          <h2 id="tablo-baslik">Sıralama</h2>
+          <p id="tablo-aciklama" class="panel-alt"></p>
+        </div>
+        <div class="lejant" id="tablo-lejant"></div>
+      </div>
+      <div class="tablo-kaydir">
+        <table class="siralama" id="tablo-siralama">
+          <thead id="tablo-bas"></thead>
+          <tbody id="tablo-govde"></tbody>
+        </table>
+      </div>
+      <p class="dipnot" id="tablo-dipnot"></p>
+    </div>
+
+    <aside class="detay panel" id="detay-panel" aria-live="polite"></aside>
+  </section>
+
+  <!-- ------------------------------------------------ karşılaştırma -->
+  <section class="panel karsilastirma" id="karsilastirma-panel">
+    <div class="panel-baslik">
+      <div>
+        <h2>Yıllara göre karşılaştırma</h2>
+        <p class="panel-alt" id="karsilastirma-alt"></p>
+      </div>
+      <div class="lejant" id="karsilastirma-lejant"></div>
+    </div>
+    <div id="karsilastirma-grafik" class="buyuk-grafik"></div>
+  </section>
+
+</main>
+
+<footer class="alt">
+  <p>
+    Veri kaynağı: ÖSYM YKS Yükseköğretim Programları ve Kontenjanları Kılavuzları (ilk yerleştirme, 2021–2026).
+    Bu araç bağımsız bir açık kaynak çalışmasıdır; ÖSYM ile ilişkisi yoktur.
+  </p>
+  <p class="alt-ince">
+    <span id="veri-surumu"></span> · MIT Lisansı ·
+    <a id="repo-baglanti-alt" href="#" rel="noopener">Kaynak kod ve katkı</a>
+  </p>
+</footer>
+
+<div id="ipucu" class="ipucu" role="tooltip" hidden></div>
+<div id="bildirim" class="bildirim" role="status" hidden></div>
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>
