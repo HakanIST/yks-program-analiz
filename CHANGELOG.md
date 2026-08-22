@@ -14,4 +14,5 @@ Bu proje [Semantik Sürümleme](https://semver.org/lang/tr/) kullanır.
 - Takip edilen üniversitenin ilk 20 dışında kalsa da gerçek sırasıyla gösterilmesi.
 - Filtrelere göre dinamik kategori özeti (üniversite, varyant, kontenjan, yerleşen, genel doluluk).
 - Paylaşılabilir bağlantı (URL durumu), CSV dışa aktarımı, açık/koyu tema.
+- Kuruma özel ayarlar tek dosyada (`docs/assets/js/config.js`): vurgulanan üniversite, varsayılan program, varsayılan kapsam ve liste uzunluğu. Varsayılan kapsam İstanbul – Vakıf.
 - Ham veriden JSON üreten Python boru hattı ve pandas ile çapraz doğrulanan Node test paketi.

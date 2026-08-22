@@ -61,6 +61,7 @@ let seciliUniversite = null; // detay panelinde gösterilen
 function varsayilanFiltre() {
   const program = veri.programAra(AYAR.varsayilanProgram);
   const vurgulanan = veri.universiteAra(AYAR.vurgulananUniversite);
+  const kapsam = ON_AYARLAR.find((onAyar) => onAyar.kod === AYAR.varsayilanKapsam) ?? ON_AYARLAR[0];
   return {
     program: program ? program.indeks : null,
     seviye: null,
@@ -69,8 +70,8 @@ function varsayilanFiltre() {
     ucret: null,
     ogretim: null,
     yillar: new Uint8Array(veri.meta.yillar.length).fill(1),
-    bolge: { tip: "TR" },
-    tur: { tip: "YURTICI_HEPSI" },
+    bolge: { ...kapsam.bolge },
+    tur: { ...kapsam.tur },
     olcut: "puan",
     takip: vurgulanan ? vurgulanan.indeks : null,
   };

@@ -203,6 +203,7 @@ Panel Üsküdar Üniversitesi için hazırlandı, ancak kuruma özel her şey te
 export const AYAR = {
   vurgulananUniversite: "ÜSKÜDAR ÜNİVERSİTESİ", // ilk 20'ye giremese de gösterilecek kurum
   varsayilanProgram: "Psikoloji",               // açılışta seçili program
+  varsayilanKapsam: "ist-vakif",                // açılıştaki kapsam: tumu | devlet | vakif | ist | ist-devlet | ist-vakif
   ilkN: 20,                                     // tabloda gösterilecek üniversite sayısı
   repo: "https://github.com/HakanIST/yks-program-analiz",
   veriDizini: "data",

@@ -12,6 +12,13 @@ export const AYAR = {
   /** Sayfa ilk açıldığında seçili gelen program. */
   varsayilanProgram: "Psikoloji",
 
+  /**
+   * Sayfa ilk açıldığında seçili gelen üniversite kapsamı.
+   * Geçerli değerler (app.js içindeki ON_AYARLAR kodları):
+   *   "tumu" | "devlet" | "vakif" | "ist" | "ist-devlet" | "ist-vakif"
+   */
+  varsayilanKapsam: "ist-vakif",
+
   /** Tabloda gösterilecek üniversite sayısı. */
   ilkN: 20,
 
