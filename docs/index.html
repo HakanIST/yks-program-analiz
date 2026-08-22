@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>YKS Program Analiz · 2021–2026</title>
+<title>Üsküdar Üniversitesi · YKS Program Analiz</title>
 <meta name="description" content="2021–2026 YKS ilk yerleştirme verileriyle bölüm/program bazında üniversite karşılaştırma paneli. En büyük puan ve doluluk oranına göre ilk 20 sıralaması, yıllık değişim grafikleri.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
@@ -17,6 +17,7 @@
     <div class="marka">
       <span class="marka-im" aria-hidden="true"></span>
       <div>
+        <p class="marka-kurum" id="marka-kurum">Üsküdar Üniversitesi</p>
         <h1>YKS Program Analiz</h1>
         <p class="marka-alt">ÖSYM ilk yerleştirme verileri · <span id="yil-araligi">2021–2026</span></p>
       </div>
@@ -45,6 +46,10 @@
                  autocomplete="off" placeholder="Program ara… (ör. Psikoloji)">
           <ul id="liste-program" class="cb-liste" role="listbox" hidden></ul>
         </div>
+        <label class="onay" for="secim-kurum-programlari">
+          <input type="checkbox" id="secim-kurum-programlari">
+          <span id="kurum-programlari-etiket">Sadece kurumun programları</span>
+        </label>
       </div>
 
       <div class="alan">

@@ -32,7 +32,7 @@ her üniversitenin yıllık değişimi grafikle izlenir ve takip edilen kurum il
 
 | Yetenek | Açıklama |
 |---|---|
-| **Program seçimi** | 1.000+ temel program adı içinde anlık arama. Burslu/ücretli/İngilizce gibi varyantlar tek program altında toplanır. |
+| **Program seçimi** | 1.000+ temel program adı içinde anlık arama. Burslu/ücretli/İngilizce gibi varyantlar tek program altında toplanır. Liste varsayılan olarak **takip edilen kurumun programlarıyla** sınırlıdır; tek kutucukla tüm programlara genişler. |
 | **Üniversite kapsamı** | Türkiye geneli, İstanbul, tek tek 81 il, KKTC, yurt dışı; devlet / vakıf / tüm türler. Talep edilen altı hazır kapsam tek tıkla seçilebilir. |
 | **İlk 20 sıralaması** | Seçilen ölçütün 2021–2026 ortalamasına göre yüksekten düşüğe. Yıllık değerler, ortalama, kontenjan ve yerleşen aynı satırda. |
 | **İki ölçüt** | *En Büyük Puan* (ortalama, azalan) ve *Doluluk Oranı* (ortalama azalan, **eşitlikte kontenjanı yüksek olan üstte**). |
@@ -201,7 +201,9 @@ Panel Üsküdar Üniversitesi için hazırlandı, ancak kuruma özel her şey te
 
 ```js
 export const AYAR = {
+  kurumAdi: "Üsküdar Üniversitesi",             // başlıkta ve sekme adında görünen kurum
   vurgulananUniversite: "ÜSKÜDAR ÜNİVERSİTESİ", // ilk 20'ye giremese de gösterilecek kurum
+  sadeceKurumProgramlari: true,                 // program listesi açılışta kurumla sınırlı mı
   varsayilanProgram: "Psikoloji",               // açılışta seçili program
   varsayilanKapsam: "ist-vakif",                // açılıştaki kapsam: tumu | devlet | vakif | ist | ist-devlet | ist-vakif
   ilkN: 20,                                     // tabloda gösterilecek üniversite sayısı

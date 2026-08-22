@@ -6,8 +6,18 @@
  * üniversitesi için kullanabilir.
  */
 export const AYAR = {
+  /** Sayfa başlığında ve sekme adında görünen kurum adı. */
+  kurumAdi: "Üsküdar Üniversitesi",
+
   /** Sıralamada ilk 20'ye giremese bile her zaman ayrıca gösterilecek üniversite. */
   vurgulananUniversite: "ÜSKÜDAR ÜNİVERSİTESİ",
+
+  /**
+   * Program listesi açılışta yalnızca takip edilen üniversitede bulunan
+   * programlarla sınırlansın mı? Kullanıcı arayüzdeki kutucukla tüm
+   * programlara geçebilir; bu yalnızca başlangıç değeridir.
+   */
+  sadeceKurumProgramlari: true,
 
   /** Sayfa ilk açıldığında seçili gelen program. */
   varsayilanProgram: "Psikoloji",

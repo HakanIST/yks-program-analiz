@@ -93,6 +93,8 @@ export async function veriYukle(kokDizin = "data") {
     .filter((sehir) => !["KKTC", "YURT DIŞI", "BİLİNMİYOR"].includes(sehir.ad))
     .sort((a, b) => trSirala(a.ad, b.ad));
 
+  const uniProgramOnbellek = new Map();
+
   return {
     meta,
     surum,
@@ -105,6 +107,17 @@ export async function veriYukle(kokDizin = "data") {
     universiteler,
     universiteSirali,
     sehirSirali,
+    /** Bir üniversitenin (hiç açtığı) programlarının indeks kümesi. */
+    universiteProgramlari(uniIndeks) {
+      if (uniIndeks == null) return null;
+      let kume = uniProgramOnbellek.get(uniIndeks);
+      if (!kume) {
+        kume = new Set();
+        for (let i = 0; i < n; i++) if (sutun.u[i] === uniIndeks) kume.add(sutun.p[i]);
+        uniProgramOnbellek.set(uniIndeks, kume);
+      }
+      return kume;
+    },
     /** Bir programın kayıt indekslerini verir. */
     programKayitlari(programIndeks) {
       if (programIndeks == null) return null; // tüm kayıtlar

@@ -131,6 +131,10 @@ a { color: var(--vurgu-acik); }
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18);
 }
 .marka h1 { font-size: 17px; }
+.marka-kurum {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--vurgu); margin-bottom: 1px;
+}
 .marka-alt { font-size: 12.5px; color: var(--murekkep-3); }
 .ust-eylem { display: flex; gap: 8px; }
 .ikon-dugme {
@@ -184,6 +188,15 @@ select:focus, input[type="text"]:focus {
   outline: none; border-color: var(--vurgu-acik);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--vurgu-acik) 18%, transparent);
 }
+
+.alan label.onay, .onay {
+  display: flex; align-items: center; gap: 6px; margin-top: 6px;
+  font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none;
+  color: var(--murekkep-3); cursor: pointer; user-select: none;
+}
+.onay input:disabled + span { opacity: .5; }
+.onay input { accent-color: var(--vurgu-acik); margin: 0; }
+.onay:hover { color: var(--murekkep-2); }
 
 .combobox { position: relative; }
 .cb-liste {

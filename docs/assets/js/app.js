@@ -26,12 +26,16 @@ const ON_AYARLAR = [
 let veri = null;
 let filtre = null;
 let sonSonuc = null;
-let seciliUniversite = null; // detay panelinde gösterilen
+let seciliUniversite = null;                            // detay panelinde gösterilen
+let cbProgram = null;                                   // program açılır listesi
+let sadeceKurumProgramlari = AYAR.sadeceKurumProgramlari; // liste kurumla sınırlı mı
 
 /* ------------------------------------------------------------------ başlat */
 
 (async function baslat() {
   temaKur();
+  document.title = `${AYAR.kurumAdi} · YKS Program Analiz`;
+  $("#marka-kurum").textContent = AYAR.kurumAdi;
   $("#repo-baglanti").href = AYAR.repo;
   $("#repo-baglanti-alt").href = AYAR.repo;
 
@@ -81,16 +85,10 @@ function varsayilanFiltre() {
 
 function kontrolleriDoldur() {
   // program combobox
-  const programKayitlari = veri.programSirali.map((program) => ({
-    etiket: program.ad,
-    anahtar: program.anahtar,
-    aciklama: `${program.kayit} kayıt`,
-    indeks: program.indeks,
-  }));
-  const cbProgram = combobox({
+  cbProgram = combobox({
     girdi: $("#secim-program"),
     liste: $("#liste-program"),
-    kayitlar: programKayitlari,
+    kayitlar: programSecenekleri(),
     bosMetin: "Program bulunamadı",
     secilince: (kayit) => {
       filtre.program = kayit.indeks;
@@ -99,6 +97,14 @@ function kontrolleriDoldur() {
     },
   });
   if (filtre.program != null) cbProgram.deger(veri.programAdi(filtre.program));
+
+  const kurumKutusu = $("#secim-kurum-programlari");
+  kurumKutusu.checked = sadeceKurumProgramlari;
+  kurumKutusu.addEventListener("change", () => {
+    sadeceKurumProgramlari = kurumKutusu.checked;
+    programListesiniTazele();
+  });
+  programListesiniTazele();
 
   // takip edilen üniversite combobox
   const uniKayitlari = veri.universiteSirali.map((uni) => ({
@@ -114,6 +120,7 @@ function kontrolleriDoldur() {
     bosMetin: "Üniversite bulunamadı",
     secilince: (kayit) => {
       filtre.takip = kayit.indeks;
+      programListesiniTazele();
       yenile();
     },
   });
@@ -188,6 +195,49 @@ function kontrolleriDoldur() {
   }
 }
 
+/** Takip edilen kurumun görünen adı (yapılandırmadaki kurumla eşleşiyorsa onun yazımı). */
+function kurumEtiketi() {
+  if (filtre.takip == null) return null;
+  const uni = veri.universiteler[filtre.takip];
+  const yapilandirilan = veri.universiteAra(AYAR.vurgulananUniversite);
+  return yapilandirilan && yapilandirilan.indeks === uni.indeks ? AYAR.kurumAdi : uni.ad;
+}
+
+/** Program açılır listesine girecek kayıtlar — istenirse kurumun programlarıyla sınırlı. */
+function programSecenekleri() {
+  const kurumProgramlari = sadeceKurumProgramlari ? veri.universiteProgramlari(filtre.takip) : null;
+  return veri.programSirali
+    .filter((program) => !kurumProgramlari || kurumProgramlari.has(program.indeks))
+    .map((program) => ({
+      etiket: program.ad,
+      anahtar: program.anahtar,
+      aciklama: `${program.kayit} kayıt`,
+      indeks: program.indeks,
+    }));
+}
+
+/** Kutucuk ya da takip edilen kurum değiştiğinde listeyi ve etiketini yeniler. */
+function programListesiniTazele() {
+  const kurum = kurumEtiketi();
+  const kutu = $("#secim-kurum-programlari");
+  const etiket = $("#kurum-programlari-etiket");
+  if (!kurum) {
+    kutu.checked = false;
+    kutu.disabled = true;
+    sadeceKurumProgramlari = false;
+    etiket.textContent = "Sadece kurumun programları";
+  } else {
+    kutu.disabled = false;
+    const adet = veri.universiteProgramlari(filtre.takip).size;
+    etiket.textContent = `Sadece ${kurum} programları (${adet})`;
+  }
+  const secenekler = programSecenekleri();
+  cbProgram.kayitlariDegistir(secenekler);
+  $("#secim-program").placeholder = sadeceKurumProgramlari
+    ? `${kurum} programlarında ara…`
+    : "Tüm programlarda ara… (ör. Psikoloji)";
+}
+
 function secenek(deger, metin) {
   const dugum = document.createElement("option");
   dugum.value = deger;
@@ -249,6 +299,9 @@ function olaylariBagla() {
     $("#secim-program").value = filtre.program != null ? veri.programAdi(filtre.program) : "";
     $("#secim-takip").value = filtre.takip != null ? veri.universiteler[filtre.takip].ad : "";
     seciliUniversite = null;
+    sadeceKurumProgramlari = AYAR.sadeceKurumProgramlari;
+    $("#secim-kurum-programlari").checked = sadeceKurumProgramlari;
+    programListesiniTazele();
     yenile();
   });
   $("#btn-csv").addEventListener("click", csvIndir);
