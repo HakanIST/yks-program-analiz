@@ -20,7 +20,12 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from normalize import program_ayristir, sayiya_cevir, universite_ayristir  # noqa: E402
+from normalize import (  # noqa: E402
+    kanonik_program_haritasi,
+    program_ayristir,
+    sayiya_cevir,
+    universite_ayristir,
+)
 
 TUR_GRUBU = {
     "DEVLET": "devlet",
@@ -54,6 +59,12 @@ def veriyi_hazirla(girdi: Path) -> pd.DataFrame:
     df["sehir"] = [uni.sehir for uni in ayristirilmis]
     df["yurtici"] = [uni.yurtici for uni in ayristirilmis]
     df["temel_program"] = [program_ayristir(ad).ad for ad in df["BÖLÜM/PROGRAM ADI"]]
+    # Kılavuzlar arası adlandırma farkları (bkz. normalize.kanonik_program_haritasi);
+    # test edilen şey sıralama hesabı olduğu için normalleştirme ortak kullanılır.
+    sayac = Counter(df["temel_program"])
+    son_yil = df.groupby("temel_program")["YIL"].max().to_dict()
+    harita = kanonik_program_haritasi(dict(sayac), {k: int(v) for k, v in son_yil.items()})
+    df["temel_program"] = df["temel_program"].map(harita)
     df["en_buyuk"] = [sayiya_cevir(deger) for deger in df["EN BÜYÜK PUAN"]]
     # Üniversitenin baskın tür kodu (JS tarafı da baskın türü kullanıyor)
     baskin = df.groupby("uni_ad")["ÜNİVERSİTE TÜRÜ"].agg(lambda seri: Counter(seri).most_common(1)[0][0])

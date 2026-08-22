@@ -39,6 +39,7 @@ from normalize import (  # noqa: E402
     OGRETIM_SIRASI,
     UCRET_SIRASI,
     Program,
+    kanonik_program_haritasi,
     program_ayristir,
     universite_ayristir,
 )
@@ -149,6 +150,8 @@ def calistir(girdi: Path, cikti_dizin: Path, ham_yaz: Path | None) -> None:
 
     uni_bilgi: dict[str, dict] = {}
     program_seviyeleri: dict[str, set[int]] = {}
+    program_sayaci: Counter = Counter()   # ham temel ad -> kayıt sayısı
+    program_son_yil: dict[str, int] = {}  # ham temel ad -> en son görüldüğü yıl
 
     sutunlar = {ad: [] for ad in ("y", "l", "t", "u", "p", "d", "f", "e", "s", "k", "ye", "mn", "mx")}
     ham_satirlar: list[list] = []
@@ -181,8 +184,10 @@ def calistir(girdi: Path, cikti_dizin: Path, ham_yaz: Path | None) -> None:
         uni_bilgi[uni.ad]["turler"][tur] += 1
 
         seviye_indeks = seviyeler.indeks(str(satir["LİSANS/ÖN LİSANS"]).strip())
-        program_indeks = programlar.indeks(program.ad)
+        program_indeks = programlar.indeks(program.ad)  # şimdilik ham ad; aşağıda kanonikleşir
         program_seviyeleri.setdefault(program.ad, set()).add(seviye_indeks)
+        program_sayaci[program.ad] += 1
+        program_son_yil[program.ad] = max(program_son_yil.get(program.ad, 0), yil)
 
         sutunlar["y"].append(yil)  # ham yıl; aşağıda sıralı indekse çevrilir
         sutunlar["l"].append(seviye_indeks)
@@ -209,6 +214,20 @@ def calistir(girdi: Path, cikti_dizin: Path, ham_yaz: Path | None) -> None:
     sirali_yillar = sorted(set(sutunlar["y"]))
     yil_indeksi = {yil: i for i, yil in enumerate(sirali_yillar)}
     sutunlar["y"] = [yil_indeksi[yil] for yil in sutunlar["y"]]
+
+    # Kılavuzlar arası adlandırma farklarını ("Tıp Fakültesi" -> "Tıp",
+    # "UOLP-Suny ..." -> "UOLP-SUNY ...") tek bir kanonik ada indirge.
+    harita = kanonik_program_haritasi(dict(program_sayaci), program_son_yil)
+    kanonik_programlar = Sozluk()
+    ham_to_kanonik = [kanonik_programlar.indeks(harita[ad]) for ad in programlar.degerler]
+    sutunlar["p"] = [ham_to_kanonik[p] for p in sutunlar["p"]]
+    kanonik_seviyeler: dict[str, set[int]] = {}
+    for ham_ad, seviye_kumesi in program_seviyeleri.items():
+        kanonik_seviyeler.setdefault(harita[ham_ad], set()).update(seviye_kumesi)
+    birlestirilen = sum(1 for ad, yeni in harita.items() if ad != yeni)
+    if birlestirilen:
+        uyarilar[f"{birlestirilen} program adı kanonik ada indirgendi"] += 1
+    programlar, program_seviyeleri = kanonik_programlar, kanonik_seviyeler
 
     cikti_dizin.mkdir(parents=True, exist_ok=True)
 

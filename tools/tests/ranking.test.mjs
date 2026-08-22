@@ -76,6 +76,36 @@ test("program adlarında burs/dil eki kalmamış", () => {
   assert.equal(kirli.length, 0, `temizlenmemiş: ${kirli.slice(0, 3).map((p) => p.ad).join(", ")}`);
 });
 
+test("kılavuz adlandırması kanonikleşmiş (Fakültesi/Yüksekokulu eki kalmamış)", () => {
+  const ekli = veri.programlar.filter((program) => /\s(Fakültesi|Yüksekokulu)(\s|$)/.test(program.ad));
+  assert.equal(ekli.length, 0, `ek taşıyan ad: ${ekli.slice(0, 3).map((p) => p.ad).join(", ")}`);
+});
+
+test("yalnızca yazımda ayrışan program adı kalmamış", () => {
+  const anahtar = (ad) =>
+    ad.replace(/I/g, "ı").replace(/İ/g, "i").toLowerCase().replace(/[^0-9a-zçğıöşü]/g, "");
+  const gorulen = new Map();
+  const cakisan = [];
+  for (const program of veri.programlar) {
+    const k = anahtar(program.ad);
+    if (gorulen.has(k)) cakisan.push(`${gorulen.get(k)} ~ ${program.ad}`);
+    else gorulen.set(k, program.ad);
+  }
+  assert.equal(cakisan.length, 0, cakisan.slice(0, 3).join(" | "));
+});
+
+test("adlandırması değişen programda seri bölünmüyor (Diş Hekimliği 2021–2026)", () => {
+  // Kaynakta 2021–2022'de "Diş Hekimliği Fakültesi", 2023'ten sonra "Diş Hekimliği".
+  const sonuc = hesapla(
+    veri,
+    filtreKur({ program: programIndeksi("Diş Hekimliği"), bolge: { tip: "HEPSI" }, tur: { tip: "HEPSI" } })
+  );
+  const satir = sonuc.satirlar.find((s) => s.uni.indeks === uniIndeksi("ÜSKÜDAR ÜNİVERSİTESİ"));
+  assert.ok(satir, "Üsküdar Diş Hekimliği satırı yok");
+  const dolu = satir.yillik.filter(Boolean).length;
+  assert.equal(dolu, veri.meta.yillar.length, `${dolu} yılda veri var, ${veri.meta.yillar.length} bekleniyordu`);
+});
+
 test("Üsküdar Üniversitesi bulunuyor ve İstanbul'da", () => {
   const uni = veri.universiteAra("ÜSKÜDAR ÜNİVERSİTESİ");
   assert.ok(uni, "üniversite bulunamadı");

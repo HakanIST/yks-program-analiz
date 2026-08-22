@@ -32,7 +32,7 @@ her üniversitenin yıllık değişimi grafikle izlenir ve takip edilen kurum il
 
 | Yetenek | Açıklama |
 |---|---|
-| **Program seçimi** | 1.000+ temel program adı içinde anlık arama. Burslu/ücretli/İngilizce gibi varyantlar tek program altında toplanır. Liste varsayılan olarak **takip edilen kurumun programlarıyla** sınırlıdır; tek kutucukla tüm programlara genişler. |
+| **Program seçimi** | 929 temel program adı içinde anlık arama. Burslu/ücretli/İngilizce gibi varyantlar tek program altında toplanır. Liste varsayılan olarak **takip edilen kurumun programlarıyla** sınırlıdır; tek kutucukla tüm programlara genişler. |
 | **Üniversite kapsamı** | Türkiye geneli, İstanbul, tek tek 81 il, KKTC, yurt dışı; devlet / vakıf / tüm türler. Talep edilen altı hazır kapsam tek tıkla seçilebilir. |
 | **İlk 20 sıralaması** | Seçilen ölçütün 2021–2026 ortalamasına göre yüksekten düşüğe. Yıllık değerler, ortalama, kontenjan ve yerleşen aynı satırda. |
 | **İki ölçüt** | *En Büyük Puan* (ortalama, azalan) ve *Doluluk Oranı* (ortalama azalan, **eşitlikte kontenjanı yüksek olan üstte**). |
@@ -86,7 +86,19 @@ Ayrıştırılan boyutlar: **dil** (İngilizce, Almanca, Fransızca, Arapça, Ru
 
 **Bilerek ayrıştırılmayanlar:** UOLP ortak programları, M.T.O.K., bakanlık adına açılan kontenjanlar, yerleşke ve kontenjan türü etiketleri temel adın parçası olarak kalır — bunlar gerçekten farklı programlardır, tek kalemde toplanmaları yanıltıcı olur.
 
-### 2. Varyantların yıl bazında birleştirilmesi
+### 2. Kılavuzlar arası adlandırma farkları
+
+Aynı program, kılavuz yılına göre farklı yazılabiliyor. Düzeltilmezse bir üniversitenin altı yıllık serisi ikiye bölünür — ör. "Diş Hekimliği" hem 2021–2022, hem 2023–2026 kaydı olan iki ayrı program gibi görünür.
+
+| Sorun | Örnek | Çözüm |
+|---|---|---|
+| 2021–2022'de fakülte/yüksekokul adı, sonrasında yalın program adı | `Tıp Fakültesi`, `Meram Tıp Fakültesi`, `Hemşirelik Yüksekokulu` | Ek atılır; kalan ad veri setindeki yalın adlarla eşleştirilir → `Tıp`, `Hemşirelik` |
+| Yerleşke etiketi sonradan kaldırılmış | `Veteriner Fakültesi (Kiraz)` → sonraki yıllarda `Veteriner` | Etiketli karşılığı hiç yoksa etiketsiz ada düşülür |
+| Aynı adın farklı yazımı | `UOLP-SUNY Binghamton` ~ `UOLP-Suny Binghamton`, `İlahiyat (M.T.O.K.)` ~ `İlahiyat(M.T.O.K.)` | Büyük/küçük harf ve noktalama yok sayılarak birleştirilir; **en güncel kılavuzun yazımı** gösterilir |
+
+Bu eşleme elle hazırlanmış bir listeye değil, veri setinin kendisine bakarak kurulur (`tools/normalize.py` → `kanonik_program_haritasi`), böylece yeni yıllar eklendiğinde de çalışır. Toplam **76 program adı** birleşti, **1.564 kayıt** etkilendi; program sayısı 1.005'ten **929**'a indi. `Hamidiye Uluslararası Tıp Fakültesi` gibi gerçekten ayrı olan programlar korunur (`Uluslararası Tıp`), çünkü eşleme yalnızca veri setinde karşılığı bulunan adlara yapılır.
+
+### 3. Varyantların yıl bazında birleştirilmesi
 
 Bir üniversitenin aynı programda birden çok varyantı olabilir (Burslu + %50 İndirimli + Ücretli + İngilizce). Yıl bazında birleştirme kuralı:
 
@@ -99,14 +111,14 @@ Bir üniversitenin aynı programda birden çok varyantı olabilir (Burslu + %50 
 
 > Vakıf üniversitelerinde en büyük puan çoğunlukla burslu kontenjandan gelir. Karşılaştırmayı daraltmak isteyen kullanıcı **Ücret / Burs** filtresinden yalnızca "Burslu" ya da yalnızca "Ücretli" seçebilir; tüm hesaplar filtreye göre yeniden yapılır.
 
-### 3. Ortalama ve sıralama
+### 4. Ortalama ve sıralama
 
 - **En Büyük Puan ölçütü:** üniversitenin veri bulunan yıllardaki en büyük puanlarının aritmetik ortalaması, **yüksekten düşüğe**.
 - **Doluluk Oranı ölçütü:** yıllık doluluk oranlarının aritmetik ortalaması, **yüksekten düşüğe**; **eşitlikte toplam kontenjanı yüksek olan üst sırada**.
 - Program bazı yıllar açılmamışsa o yıl ortalamaya katılmaz (sıfır sayılmaz), grafikte çizgi kırılır.
 - Ölçüt için hiç değeri olmayan üniversiteler sıralamaya alınmaz, sıra numarası verilmez.
 
-### 4. Kapsam tanımları
+### 5. Kapsam tanımları
 
 | Kapsam | Tanım |
 |---|---|
@@ -115,7 +127,7 @@ Bir üniversitenin aynı programda birden çok varyantı olabilir (Burslu + %50 
 | Devlet / Vakıf | Kaynaktaki tür koduna göre; `VAKIF MYO` vakıf grubuna, `KKTC VAKIF` KKTC grubuna dahildir |
 | Şehir | Üniversite adındaki parantezli şehirden, yoksa ad içindeki il adından çözülür; çözülemeyen iki kurum `tools/normalize.py` içinde elle eşlenmiştir |
 
-### 5. Grafik yönü
+### 6. Grafik yönü
 
 Her iki ölçütte de **değer arttıkça çizgi yukarı çıkar**: en büyük puanın yükselmesi de doluluk oranının artması da grafikte yükseliş olarak görünür.
 
@@ -245,7 +257,7 @@ https://github.com/HakanIST/yks-program-analiz
 
 ## English summary
 
-**YKS Program Analiz** is a static, dependency-free web panel that compares Turkish universities by academic program using the official ÖSYM placement data for 2021–2026 (128,832 records, 239 universities, 1,005 base programs).
+**YKS Program Analiz** is a static, dependency-free web panel that compares Turkish universities by academic program using the official ÖSYM placement data for 2021–2026 (128,832 records, 239 universities, 929 base programs).
 
 Pick a program, choose a scope (nationwide, İstanbul, a single province, state/foundation universities), and the panel ranks the top 20 universities by the six-year average of either the **highest admission score** or the **fill rate** (ties broken by quota). Each row carries a sparkline of its yearly trend, points expose full detail on hover, and a configurable "tracked university" is always shown with its **true rank** even when it falls outside the top 20.
 

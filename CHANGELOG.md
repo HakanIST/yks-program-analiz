@@ -6,6 +6,9 @@ Bu proje [Semantik Sürümleme](https://semver.org/lang/tr/) kullanır.
 
 İlk sürüm.
 
+### Düzeltildi
+- Kılavuzlar arası adlandırma farkları yüzünden bölünen program serileri birleştirildi: 2021–2022'deki `X Fakültesi` / `X Yüksekokulu` adları yalın program adına indirgendi, yalnızca yazımda ayrışan adlar (`UOLP-SUNY` ~ `UOLP-Suny`) tek yazıma toplandı. Temel program sayısı 1.005'ten 929'a indi, 1.564 kayıt etkilendi.
+
 ### Eklendi
 - 2021–2026 YKS ilk yerleştirme verisiyle (128.832 kayıt, 239 üniversite, 1.005 temel program) çalışan statik analiz paneli.
 - Program seçimi, üniversite kapsamı (Türkiye geneli / İstanbul / il / KKTC / yurt dışı), üniversite türü, yıl, seviye, puan türü, öğretim dili, ücret-burs ve öğretim şekli filtreleri.

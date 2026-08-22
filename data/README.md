@@ -35,6 +35,7 @@ bulunur; sürüm bilgisi `docs/data/VERSION.json` içindedir.
 
 - **`--` değerleri:** 3.865 satırda puan alanları `--`; bu satırlarda yerleşen sayısı sıfırdır. Ortalamalara katılmaz, grafikte çizgi kırılır.
 - **%100'ü aşan doluluk:** 46.360 satırda doluluk oranı %100'ün üzerindedir (en yüksek %150). Kaynak veriden olduğu gibi alınmıştır.
+- **Yıllar arası adlandırma değişikliği:** 2021–2022 kılavuzlarında `Tıp Fakültesi`, `Diş Hekimliği Fakültesi`, `Hemşirelik Yüksekokulu` gibi fakülte adları kullanılmış; 2023'ten itibaren yalın program adına (`Tıp`, `Diş Hekimliği`, `Hemşirelik`) geçilmiş. Ayrıca `UOLP-SUNY` ~ `UOLP-Suny` gibi yazım farkları var. Boru hattı bunları tek kanonik ada indirger (76 ad, 1.564 kayıt); ayrıntı README'nin Metodoloji bölümünde.
 - **Yinelenen üniversite adı:** `İZMİR KAVRAM MESLEK YÜKSEKOKULU` kaynakta bir yıl çift boşlukla yazılmış; boşluklar sadeleştirilerek tek kurum olarak birleştirilir.
 - **Şehri adından çözülemeyen kurumlar:** `GEBZE TEKNİK ÜNİVERSİTESİ` (Kocaeli) ve `TÜRK-JAPON BİLİM VE TEKNOLOJİ ÜNİVERSİTESİ` (İstanbul) `tools/normalize.py` içinde elle eşlenmiştir.
 
