@@ -22,7 +22,7 @@ globalThis.fetch = async (yol) => {
 };
 
 const { veriYukle } = await import(path.join(kok, "docs/assets/js/data.js"));
-const { hesapla, gosterilecekSatirlar, dilKirilimi } = await import(path.join(kok, "docs/assets/js/ranking.js"));
+const { hesapla, gosterilecekSatirlar, dilKirilimi, kurumTablosu, kurumToplami } = await import(path.join(kok, "docs/assets/js/ranking.js"));
 
 const veri = await veriYukle("data");
 
@@ -274,6 +274,60 @@ test("tek dilli programda kırılım tek satır, özet tek dil", () => {
   const sonuc = hesapla(veri, filtreKur({ program: mbg(), dil: dilIndeksi("İngilizce"), ...istVakif }));
   assert.deepEqual(sonuc.ozet.diller, [dilIndeksi("İngilizce")]);
   for (const satir of sonuc.satirlar) assert.equal(dilKirilimi(veri, satir).length, 1);
+});
+
+/* --------------------------------------------------------- kurum görünümü */
+
+test("kurum tablosu: Üsküdar'ın MBG Türkçe ve İngilizce bölümleri ayrı satır", () => {
+  const uskudar = uniIndeksi("ÜSKÜDAR ÜNİVERSİTESİ");
+  const sonuc = kurumTablosu(veri, filtreKur({ ...istVakif, olcut: "doluluk", takip: uskudar }), uskudar);
+  const etiketler = sonuc.satirlar.map((s) => s.etiket);
+  assert.ok(etiketler.includes("Moleküler Biyoloji ve Genetik"), "Türkçe satır yok");
+  assert.ok(etiketler.includes("Moleküler Biyoloji ve Genetik (İngilizce)"), "İngilizce satır yok");
+  // Üsküdar Bilgisayar Mühendisliğini yalnızca İngilizce sunuyor: tek satır, dil ekli
+  assert.ok(etiketler.includes("Bilgisayar Mühendisliği (İngilizce)"));
+  assert.ok(!etiketler.includes("Bilgisayar Mühendisliği"), "İngilizce-only programda yalın satır olmamalı");
+  const sonYil = veri.meta.yillar.indexOf(2026);
+  const tr = sonuc.satirlar.find((s) => s.etiket === "Moleküler Biyoloji ve Genetik").satir.yillik[sonYil];
+  const ing = sonuc.satirlar.find((s) => s.etiket === "Moleküler Biyoloji ve Genetik (İngilizce)").satir.yillik[sonYil];
+  assert.deepEqual([tr.kontenjan, tr.yerlesen, ing.kontenjan, ing.yerlesen], [49, 38, 74, 46]);
+});
+
+test("kurum tablosu: sıra ve son 2 yıl farkı dil filtreli hesapla ile aynı", () => {
+  const uskudar = uniIndeksi("ÜSKÜDAR ÜNİVERSİTESİ");
+  const filtre = filtreKur({ ...istVakif, olcut: "doluluk", takip: uskudar });
+  const sonuc = kurumTablosu(veri, filtre, uskudar);
+  const satir = sonuc.satirlar.find((s) => s.etiket === "Moleküler Biyoloji ve Genetik (İngilizce)");
+  const ayri = hesapla(veri, { ...filtre, program: mbg(), dil: dilIndeksi("İngilizce") });
+  const beklenen = ayri.satirlar.find((s) => s.uni.indeks === uskudar);
+  assert.equal(satir.sira, beklenen.sira);
+  assert.equal(satir.siralanan, ayri.ozet.siralanan);
+  const y = veri.meta.yillar.length;
+  const fark = beklenen.yillik[y - 1].doluluk - beklenen.yillik[y - 2].doluluk;
+  assert.ok(Math.abs(satir.sonFark - fark) < 1e-9, `son fark ${satir.sonFark} ≠ ${fark}`);
+});
+
+test("kurum tablosu: toplam satırı yıl bazında kontenjan/yerleşen toplamıdır", () => {
+  const uskudar = uniIndeksi("ÜSKÜDAR ÜNİVERSİTESİ");
+  const sonuc = kurumTablosu(veri, filtreKur({ ...istVakif, olcut: "doluluk", takip: uskudar }), uskudar);
+  const mdbf = new Set(["Moleküler Biyoloji ve Genetik", "Moleküler Biyoloji ve Genetik (İngilizce)", "Yazılım Mühendisliği (İngilizce)"]);
+  const secilen = sonuc.satirlar.filter((s) => mdbf.has(s.etiket));
+  assert.equal(secilen.length, 3);
+  const toplam = kurumToplami(secilen, veri.meta.yillar.length);
+  const sonYil = veri.meta.yillar.indexOf(2026);
+  const kontenjan = secilen.reduce((t, s) => t + s.satir.yillik[sonYil].kontenjan, 0);
+  const yerlesen = secilen.reduce((t, s) => t + s.satir.yillik[sonYil].yerlesen, 0);
+  assert.equal(toplam.yillik[sonYil].kontenjan, kontenjan);
+  assert.equal(toplam.yillik[sonYil].yerlesen, yerlesen);
+  assert.ok(Math.abs(toplam.yillik[sonYil].doluluk - (yerlesen / kontenjan) * 100) < 1e-9);
+});
+
+test("kurum tablosu: kurum kapsam dışındaysa satır yok, üniversite seçilmemişse boş", () => {
+  const uskudar = uniIndeksi("ÜSKÜDAR ÜNİVERSİTESİ");
+  const devlet = kurumTablosu(veri, filtreKur({ tur: { tip: "GRUP", deger: "devlet" }, takip: uskudar }), uskudar);
+  assert.equal(devlet.satirlar.length, 0);
+  assert.equal(devlet.toplam.kontenjan, 0);
+  assert.equal(kurumTablosu(veri, filtreKur(), null).satirlar.length, 0);
 });
 
 /* --------------------------------------------- pandas ile çapraz doğrulama */

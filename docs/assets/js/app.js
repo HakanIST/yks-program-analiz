@@ -7,7 +7,7 @@
 
 import { AYAR } from "./config.js";
 import { veriYukle, TUR_ETIKETI } from "./data.js";
-import { hesapla, gosterilecekSatirlar, dilKirilimi, OLCUT } from "./ranking.js";
+import { hesapla, gosterilecekSatirlar, dilKirilimi, kurumTablosu, kurumToplami, OLCUT } from "./ranking.js";
 import { sparkline, cizgiGrafik, SERI_RENKLERI, ipucuGizle } from "./charts.js";
 import { combobox } from "./combobox.js";
 import { sayi, puan, yuzde, kisaSayi, degisim, trSirala, aramaAnahtari } from "./format.js";
@@ -26,6 +26,7 @@ const ON_AYARLAR = [
 let veri = null;
 let filtre = null;
 let sonSonuc = null;
+let sonKurum = null;                                    // kurum görünümünün son hesabı
 let seciliUniversite = null;                            // detay panelinde gösterilen
 let cbProgram = null;                                   // program açılır listesi
 let sadeceKurumProgramlari = AYAR.sadeceKurumProgramlari; // liste kurumla sınırlı mı
@@ -78,6 +79,11 @@ function varsayilanFiltre() {
     tur: { ...kapsam.tur },
     olcut: "puan",
     takip: vurgulanan ? vurgulanan.indeks : null,
+    // Kurum görünümü (#3): görünüm, program kümesi, elle seçim ve doluluk eşiği
+    gorunum: "program",
+    kume: null,          // null = tüm programlar | "FAKULTE:MDBF" | "SECIM"
+    secim: new Set(),    // kurum görünümünde kutucukla işaretlenen satır etiketleri (arama anahtarı)
+    esik: AYAR.dolulukEsigi ?? 70,
   };
 }
 
@@ -196,6 +202,8 @@ function kontrolleriDoldur() {
     });
     onAyarKap.append(cip);
   }
+
+  kurumKontrolleriniDoldur();
 }
 
 /** Takip edilen kurumun görünen adı (yapılandırmadaki kurumla eşleşiyorsa onun yazımı). */
@@ -354,13 +362,44 @@ function olaylariBagla() {
 
 function yenile(urlYaz = true) {
   ipucuGizle();
-  sonSonuc = hesapla(veri, filtre);
-  kontrolleriGuncelle();
-  kpiCiz(sonSonuc);
-  tabloCiz(sonSonuc);
-  detayCiz();
-  karsilastirmaCiz(sonSonuc);
+  if (filtre.gorunum === "kurum") {
+    // Kurum görünümünde dil satırlarda tanımlıdır; genel dil filtresi uygulanmaz.
+    sonKurum = kurumTablosu(veri, { ...filtre, dil: null }, filtre.takip);
+    kontrolleriGuncelle();
+    kurumCiz(sonKurum);
+  } else {
+    sonSonuc = hesapla(veri, filtre);
+    kontrolleriGuncelle();
+    kpiCiz(sonSonuc);
+    tabloCiz(sonSonuc);
+    detayCiz();
+    karsilastirmaCiz(sonSonuc);
+  }
   if (urlYaz) urlYaz_();
+}
+
+/** Görünüme göre bölümleri ve filtre alanlarını açıp kapatır. */
+function gorunumuUygula() {
+  const kurumMu = filtre.gorunum === "kurum";
+  for (const sekme of document.querySelectorAll(".gorunum-sekmeler .sekme")) {
+    sekme.setAttribute("aria-selected", sekme.dataset.gorunum === filtre.gorunum ? "true" : "false");
+  }
+  // Takip edilen üniversite alanı kurum görünümünde birincil alandır: program
+  // kutusunun yerine taşınır (DOM düğümü taşınır, dinleyiciler korunur).
+  const alanProgram = $("#alan-program");
+  const alanTakip = $("#alan-takip");
+  const birincil = alanProgram.parentElement;
+  if (kurumMu && alanTakip.parentElement !== birincil) birincil.prepend(alanTakip);
+  if (!kurumMu && alanTakip.parentElement === birincil) $("#ek-filtreler .filtre-satir").append(alanTakip);
+  $("#etiket-takip").textContent = kurumMu ? "Kurum" : "Ayrıca gösterilecek üniversite";
+  alanProgram.hidden = kurumMu;
+  $("#kume-satir").hidden = !kurumMu;
+  $("#sonuc").hidden = kurumMu;
+  $("#kpi-serit").hidden = false;
+  $("#karsilastirma-panel").hidden = kurumMu;
+  $("#kurum").hidden = !kurumMu;
+  if (!kurumMu) $("#kurum-grafik-panel").hidden = true;
+  if (kurumMu) $("#dil-uyari").hidden = true;
 }
 
 function kontrolleriGuncelle() {
@@ -398,7 +437,9 @@ function kontrolleriGuncelle() {
   }
 
   $("#filtre-ozet").textContent = filtreOzeti();
-  dilUyarisiCiz();
+  gorunumuUygula();
+  if (filtre.gorunum === "kurum") kumeKontrolleriniGuncelle();
+  else dilUyarisiCiz();
 }
 
 /**
@@ -451,7 +492,12 @@ function dilUyarisiCiz() {
 
 function filtreOzeti() {
   const parcalar = [];
-  parcalar.push(programBasligi());
+  if (filtre.gorunum === "kurum") {
+    parcalar.push(kurumEtiketi() ?? "Kurum seçilmedi");
+    parcalar.push(kumeAdi());
+  } else {
+    parcalar.push(programBasligi());
+  }
   parcalar.push(kapsamAdi());
   parcalar.push(OLCUT[filtre.olcut].ad + " sıralaması");
   const yillar = veri.meta.yillar.filter((_, indeks) => filtre.yillar[indeks]);
@@ -968,9 +1014,406 @@ function karsilastirmaCiz(sonuc) {
   }
 }
 
+/* ---------------------------------------------------------- kurum görünümü */
+
+/** Satır etiketini kümelerle eşlemek için anahtar (yazım farklarına dayanıklı). */
+const kumeAnahtari = (etiket) => aramaAnahtari(etiket);
+
+function fakulteler() {
+  return AYAR.fakulteler ?? {};
+}
+
+function kumeAdi() {
+  if (filtre.kume == null) return "Tüm programlar";
+  if (filtre.kume === "SECIM") return `Seçilen ${filtre.secim.size} program`;
+  return filtre.kume.slice("FAKULTE:".length);
+}
+
+/** Program kümesi çipini ve eşik kutusunu kurar; görünüm sekmelerini bağlar. */
+function kurumKontrolleriniDoldur() {
+  for (const sekme of document.querySelectorAll(".gorunum-sekmeler .sekme")) {
+    sekme.addEventListener("click", () => {
+      if (filtre.gorunum === sekme.dataset.gorunum) return;
+      filtre.gorunum = sekme.dataset.gorunum;
+      yenile();
+    });
+  }
+
+  const kap = $("#kume-listesi");
+  const cipEkle = (etiket, kume) => {
+    const cip = document.createElement("button");
+    cip.type = "button";
+    cip.className = "cip";
+    cip.dataset.kume = kume ?? "";
+    cip.textContent = etiket;
+    cip.addEventListener("click", () => {
+      filtre.kume = kume;
+      yenile();
+    });
+    kap.append(cip);
+  };
+  cipEkle("Tüm programlar", null);
+  for (const ad of Object.keys(fakulteler())) cipEkle(ad, `FAKULTE:${ad}`);
+  cipEkle("Seçilenler", "SECIM");
+
+  const esik = $("#secim-esik");
+  esik.value = filtre.esik;
+  esik.addEventListener("change", () => {
+    const deger = Number(esik.value);
+    filtre.esik = Number.isFinite(deger) ? Math.min(150, Math.max(0, deger)) : AYAR.dolulukEsigi ?? 70;
+    esik.value = filtre.esik;
+    yenile();
+  });
+}
+
+function kumeKontrolleriniGuncelle() {
+  const satirlar = sonKurum ? sonKurum.satirlar : [];
+  for (const cip of document.querySelectorAll("#kume-listesi .cip")) {
+    const kume = cip.dataset.kume || null;
+    cip.setAttribute("aria-pressed", kume === filtre.kume ? "true" : "false");
+    let adet;
+    if (kume == null) adet = satirlar.length;
+    else if (kume === "SECIM") adet = filtre.secim.size;
+    else adet = satirlar.filter((satir) => kumeyeDahil(satir, kume)).length;
+    cip.textContent = `${kume == null ? "Tüm programlar" : kume === "SECIM" ? "Seçilenler" : kume.slice("FAKULTE:".length)} (${adet})`;
+    if (kume === "SECIM") cip.disabled = filtre.secim.size === 0 && filtre.kume !== "SECIM";
+  }
+  $("#secim-esik").value = filtre.esik;
+  $("#secim-esik").disabled = filtre.olcut !== "doluluk";
+}
+
+function kumeyeDahil(satir, kume = filtre.kume) {
+  if (kume == null) return true;
+  if (kume === "SECIM") return filtre.secim.has(kumeAnahtari(satir.etiket));
+  const liste = fakulteler()[kume.slice("FAKULTE:".length)] ?? [];
+  const anahtarlar = new Set(liste.map(kumeAnahtari));
+  return anahtarlar.has(kumeAnahtari(satir.etiket));
+}
+
+/** Kurum görünümünde bir satırın ölçüt değeri (doluluk ya da en büyük puan). */
+function kurumMetrik(satir, yilIndeksi) {
+  return metrikDegeri(satir.satir, yilIndeksi);
+}
+
+function esikAltiMi(deger) {
+  return filtre.olcut === "doluluk" && deger != null && deger < filtre.esik;
+}
+
+function kurumCiz(sonuc) {
+  const kurum = kurumEtiketi();
+  const yilIndeksleri = veri.meta.yillar.map((_, indeks) => indeks).filter((indeks) => filtre.yillar[indeks]);
+  const gorunen = sonuc.satirlar.filter((satir) => kumeyeDahil(satir)).sort((a, b) => trSirala(a.etiket, b.etiket));
+  const toplam = kurumToplami(gorunen, veri.meta.yillar.length);
+  const olcut = OLCUT[filtre.olcut];
+
+  // --- KPI: kurum/küme toplamları
+  const yillar = yilIndeksleri.map((indeks) => veri.meta.yillar[indeks]);
+  const sonYil = yilIndeksleri.at(-1);
+  const sonToplam = toplam.yillik[sonYil];
+  const esikAlti = filtre.olcut === "doluluk"
+    ? gorunen.filter((satir) => esikAltiMi(kurumMetrik(satir, sonYil))).length
+    : null;
+  const kartlar = [
+    { etiket: "Program", deger: sayi(gorunen.length), alt: kumeAdi() },
+    { etiket: `${veri.meta.yillar[sonYil]} kontenjan`, deger: sayi(sonToplam?.kontenjan ?? 0), alt: `${yillar[0]}–${yillar.at(-1)} toplamı ${sayi(toplam.kontenjan)}` },
+    { etiket: `${veri.meta.yillar[sonYil]} yerleşen`, deger: sayi(sonToplam?.yerlesen ?? 0), alt: `${sayi((sonToplam?.kontenjan ?? 0) - (sonToplam?.yerlesen ?? 0))} boş kontenjan` },
+    { etiket: `${veri.meta.yillar[sonYil]} doluluk`, deger: yuzde(sonToplam?.doluluk), alt: `dönem geneli ${yuzde(toplam.doluluk)}` },
+    esikAlti != null
+      ? { etiket: `Eşik altı (%${filtre.esik})`, deger: sayi(esikAlti), alt: `${veri.meta.yillar[sonYil]} doluluğu eşiğin altında` }
+      : { etiket: "Ölçüt", deger: olcut.kisa, alt: "kapsamdaki sıra bu ölçüte göre" },
+  ];
+  const kap = $("#kpi-serit");
+  kap.textContent = "";
+  for (const kart of kartlar) {
+    const kutu = document.createElement("div");
+    kutu.className = "kpi";
+    kutu.innerHTML = `<div class="kpi-etiket"></div><div class="kpi-deger"></div><div class="kpi-alt"></div>`;
+    kutu.querySelector(".kpi-etiket").textContent = kart.etiket;
+    kutu.querySelector(".kpi-deger").textContent = kart.deger;
+    kutu.querySelector(".kpi-alt").textContent = kart.alt;
+    kap.append(kutu);
+  }
+
+  // --- başlık
+  $("#kurum-baslik").textContent = `${kurum ?? "Kurum"} — ${kumeAdi()}`;
+  $("#kurum-aciklama").textContent =
+    `${olcut.ad}; sıra sütunu ${kapsamAdi()} kapsamındaki gerçek sıra / sıralanan üniversite. Satıra tıklayınca o programın karşılaştırmasına geçilir.`;
+  $("#kurum-lejant").innerHTML = "";
+  if (filtre.olcut === "doluluk") {
+    const lejant = document.createElement("span");
+    lejant.innerHTML = `<i class="esik-im"></i>`;
+    lejant.append(document.createTextNode(`%${filtre.esik} eşiğinin altı`));
+    $("#kurum-lejant").append(lejant);
+  }
+
+  // --- tablo
+  const bas = $("#kurum-bas");
+  bas.innerHTML = "";
+  const basSatir = document.createElement("tr");
+  const secHucre = hucre("th", "", "sec");
+  const tumunuSec = document.createElement("input");
+  tumunuSec.type = "checkbox";
+  tumunuSec.title = "Görünen satırların tümünü seç / bırak";
+  tumunuSec.setAttribute("aria-label", "Görünen satırların tümünü seç");
+  tumunuSec.checked = gorunen.length > 0 && gorunen.every((satir) => filtre.secim.has(kumeAnahtari(satir.etiket)));
+  tumunuSec.addEventListener("change", () => {
+    for (const satir of gorunen) {
+      if (tumunuSec.checked) filtre.secim.add(kumeAnahtari(satir.etiket));
+      else filtre.secim.delete(kumeAnahtari(satir.etiket));
+    }
+    if (filtre.kume === "SECIM" && filtre.secim.size === 0) filtre.kume = null;
+    yenile();
+  });
+  secHucre.append(tumunuSec);
+  basSatir.append(
+    secHucre,
+    hucre("th", "Program", "sol"),
+    ...yilIndeksleri.map((indeks) => hucre("th", String(veri.meta.yillar[indeks]))),
+    hucre("th", "Ortalama"),
+    hucre("th", "Kontenjan"),
+    hucre("th", "Yerleşen"),
+    hucre("th", "Son 2 yıl"),
+    hucre("th", "Sıra"),
+    hucre("th", `${olcut.kisa} değişimi`, "grafik")
+  );
+  bas.append(basSatir);
+
+  const govde = $("#kurum-govde");
+  govde.innerHTML = "";
+  const alt = $("#kurum-alt");
+  alt.innerHTML = "";
+  const sutunSayisi = yilIndeksleri.length + 8;
+
+  if (!kurum) {
+    govde.append(bosSatir("Kurum görünümü için bir üniversite seçin.", sutunSayisi));
+  } else if (!gorunen.length) {
+    govde.append(
+      bosSatir(
+        sonuc.satirlar.length
+          ? "Seçili program kümesinde satır yok."
+          : `${kurum} seçili kapsam ve filtrelerde bulunamadı; kapsamı genişletin.`,
+        sutunSayisi
+      )
+    );
+  }
+
+  for (const satir of gorunen) govde.append(kurumSatiri(satir, yilIndeksleri));
+
+  if (gorunen.length > 1) {
+    const tr = document.createElement("tr");
+    tr.className = "toplam";
+    tr.append(hucre("td", "", "sec"), hucre("td", `Toplam (${gorunen.length} program)`, "sol"));
+    for (const yilIndeksi of yilIndeksleri) {
+      const t = toplam.yillik[yilIndeksi];
+      const deger = filtre.olcut === "doluluk" ? t?.doluluk ?? null : null;
+      const td = hucre("td", deger == null ? (t ? "—" : "—") : yuzde(deger));
+      if (esikAltiMi(deger)) td.classList.add("esik-alti");
+      if (t) td.title = `Kontenjan: ${sayi(t.kontenjan)} · Yerleşen: ${sayi(t.yerlesen)}`;
+      tr.append(td);
+    }
+    tr.append(
+      hucre("td", filtre.olcut === "doluluk" ? yuzde(toplam.doluluk) : "—", "ort"),
+      hucre("td", sayi(toplam.kontenjan)),
+      hucre("td", sayi(toplam.yerlesen)),
+      hucre("td", "—"),
+      hucre("td", "—"),
+      hucre("td", "", "grafik")
+    );
+    alt.append(tr);
+  }
+
+  $("#kurum-dipnot").textContent =
+    `Her satır bir bölümdür; öğretim dili farklı olan programlar ayrı satırdır, burs/ücret varyantları yıl bazında birleştirilmiştir. ` +
+    `Toplam satırındaki doluluk, kümedeki programların toplam yerleşen / toplam kontenjan oranıdır (ortalamaların ortalaması değil). ` +
+    `"Son 2 yıl" seçili son iki yıl arasındaki farktır. ` +
+    `Kaynak ÖSYM ilk yerleştirme sonuçlarıdır; ek yerleştirme ve sonradan eklenen ek kontenjanlar dahil değildir.`;
+
+  kurumGrafikCiz(gorunen, yilIndeksleri);
+}
+
+function bosSatir(metin, sutunSayisi) {
+  const tr = document.createElement("tr");
+  const td = hucre("td", metin, "sol");
+  td.colSpan = sutunSayisi;
+  td.style.textAlign = "center";
+  td.style.padding = "28px";
+  tr.append(td);
+  return tr;
+}
+
+function kurumSatiri(satir, yilIndeksleri) {
+  const tr = document.createElement("tr");
+  const anahtar = kumeAnahtari(satir.etiket);
+
+  const secHucre = hucre("td", "", "sec");
+  const kutu = document.createElement("input");
+  kutu.type = "checkbox";
+  kutu.checked = filtre.secim.has(anahtar);
+  kutu.setAttribute("aria-label", `${satir.etiket} seçimi`);
+  kutu.addEventListener("click", (olay) => olay.stopPropagation());
+  kutu.addEventListener("change", () => {
+    if (kutu.checked) filtre.secim.add(anahtar);
+    else filtre.secim.delete(anahtar);
+    if (filtre.kume === "SECIM" && filtre.secim.size === 0) filtre.kume = null;
+    yenile();
+  });
+  secHucre.append(kutu);
+  tr.append(secHucre);
+
+  const adHucre = document.createElement("td");
+  adHucre.className = "sol uni";
+  const ad = document.createElement("div");
+  ad.className = "uni-ad";
+  ad.textContent = satir.etiket;
+  const altYazi = document.createElement("div");
+  altYazi.className = "uni-alt";
+  const varyantlar = [
+    ...new Set(yilIndeksleri.flatMap((yil) => satir.satir.yillik[yil]?.kayitlar ?? []).map((i) => veri.meta.ucretler[veri.sutun.f[i]])),
+  ];
+  altYazi.textContent = varyantlar.join(" · ");
+  adHucre.append(ad, altYazi);
+  tr.append(adHucre);
+
+  for (const yilIndeksi of yilIndeksleri) {
+    const deger = kurumMetrik(satir, yilIndeksi);
+    const td = hucre("td", deger == null ? "—" : metrikBicim(deger));
+    if (deger == null) td.classList.add("bos-veri");
+    else {
+      td.title = hucreBaslik(satir.satir, yilIndeksi);
+      if (esikAltiMi(deger)) td.classList.add("esik-alti");
+    }
+    tr.append(td);
+  }
+
+  const ort = metrikOrtalamasi(satir.satir);
+  const ortHucre = hucre("td", metrikBicim(ort), "ort");
+  if (esikAltiMi(ort)) ortHucre.classList.add("esik-alti");
+  tr.append(ortHucre);
+  tr.append(hucre("td", sayi(satir.satir.toplamKontenjan)));
+  tr.append(hucre("td", sayi(satir.satir.toplamYerlesen)));
+
+  const farkHucre = hucre("td", satir.sonFark == null ? "—" : degisim(satir.sonFark, filtre.olcut === "doluluk" ? 1 : 2) + (filtre.olcut === "doluluk" ? " pp" : ""));
+  farkHucre.className = `yon ${satir.sonFark > 0 ? "artis" : satir.sonFark < 0 ? "azalis" : ""}`;
+  tr.append(farkHucre);
+
+  const siraHucre = hucre("td", satir.sira != null ? `${satir.sira} / ${satir.siralanan}` : "—", "sira-kapsam");
+  siraHucre.title = `${kapsamAdi()} kapsamında ${OLCUT[filtre.olcut].kisa.toLocaleLowerCase("tr")} sırası`;
+  tr.append(siraHucre);
+
+  const grafikHucre = document.createElement("td");
+  grafikHucre.className = "grafik";
+  grafikHucre.append(
+    sparkline(
+      yilIndeksleri.map((yilIndeksi) => ({
+        yil: veri.meta.yillar[yilIndeksi],
+        deger: kurumMetrik(satir, yilIndeksi),
+        ipucu: ipucuIcerigi(satir.satir, yilIndeksi),
+      })),
+      { renk: "var(--vurgu-acik)", etiket: `${satir.etiket} yıllara göre değişim` }
+    )
+  );
+  tr.append(grafikHucre);
+
+  // Satır → o programın üniversite karşılaştırması (dil filtresi satırla gelir)
+  tr.addEventListener("click", () => {
+    filtre.gorunum = "program";
+    filtre.program = satir.program;
+    filtre.dil = satir.dil;
+    seciliUniversite = filtre.takip;
+    $("#secim-program").value = programBasligi();
+    yenile();
+    $("#sonuc").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  return tr;
+}
+
+/** Küme küçükse (≤ 10 program) hepsini tek grafikte göster; kalabalıkta gizle. */
+function kurumGrafikCiz(gorunen, yilIndeksleri) {
+  const panel = $("#kurum-grafik-panel");
+  const kap = $("#kurum-grafik");
+  const lejantKap = $("#kurum-grafik-lejant");
+  kap.innerHTML = "";
+  lejantKap.innerHTML = "";
+  const enFazla = 10;
+  if (!gorunen.length || gorunen.length > enFazla) {
+    panel.hidden = true;
+    return;
+  }
+  panel.hidden = false;
+  $("#kurum-grafik-alt").textContent = `${gorunen.length} program · ${OLCUT[filtre.olcut].ad}`;
+
+  const seriler = gorunen.map((satir, indeks) => ({
+    ad: satir.etiket,
+    renk: SERI_RENKLERI[indeks % SERI_RENKLERI.length],
+    noktalar: yilIndeksleri.map((yilIndeksi) => ({
+      yil: veri.meta.yillar[yilIndeksi],
+      deger: kurumMetrik(satir, yilIndeksi),
+      ipucu: ipucuIcerigi(satir.satir, yilIndeksi),
+    })),
+  }));
+  kap.append(
+    cizgiGrafik(seriler, {
+      yillar: yilIndeksleri.map((indeks) => veri.meta.yillar[indeks]),
+      genislik: 1000,
+      yukseklik: 340,
+      eksenBicim: (deger) => (filtre.olcut === "doluluk" ? `${Math.round(deger)}%` : Math.round(deger)),
+      enFazla: filtre.olcut === "doluluk" ? 155 : null,
+      etiket: `Programların ${OLCUT[filtre.olcut].ad} değişimi`,
+    })
+  );
+  for (const seri of seriler) {
+    const oge = document.createElement("span");
+    const kutu = document.createElement("i");
+    kutu.style.background = seri.renk;
+    oge.append(kutu, document.createTextNode(seri.ad));
+    lejantKap.append(oge);
+  }
+}
+
+function kurumCsv() {
+  const yilIndeksleri = veri.meta.yillar.map((_, indeks) => indeks).filter((indeks) => filtre.yillar[indeks]);
+  const gorunen = sonKurum.satirlar.filter((satir) => kumeyeDahil(satir)).sort((a, b) => trSirala(a.etiket, b.etiket));
+  const toplam = kurumToplami(gorunen, veri.meta.yillar.length);
+  const basliklar = [
+    "Program", "Öğretim dili",
+    ...yilIndeksleri.map((indeks) => String(veri.meta.yillar[indeks])),
+    "Ortalama", "Toplam kontenjan", "Toplam yerleşen", "Genel doluluk %", "Son 2 yıl farkı", "Sıra", "Sıralanan",
+  ];
+  const satirlar = gorunen.map((satir) => [
+    satir.etiket,
+    satir.dil != null ? veri.dilAdi(satir.dil) : satir.satir.diller.map((dil) => veri.dilAdi(dil)).join(" + "),
+    ...yilIndeksleri.map((yilIndeksi) => sayiCsv(kurumMetrik(satir, yilIndeksi))),
+    sayiCsv(metrikOrtalamasi(satir.satir)),
+    satir.satir.toplamKontenjan,
+    satir.satir.toplamYerlesen,
+    sayiCsv(satir.satir.genelDoluluk),
+    sayiCsv(satir.sonFark),
+    satir.sira ?? "",
+    satir.siralanan,
+  ]);
+  if (gorunen.length > 1) {
+    satirlar.push([
+      "TOPLAM", "",
+      ...yilIndeksleri.map((yilIndeksi) => sayiCsv(filtre.olcut === "doluluk" ? toplam.yillik[yilIndeksi]?.doluluk ?? null : null)),
+      sayiCsv(filtre.olcut === "doluluk" ? toplam.doluluk : null),
+      toplam.kontenjan, toplam.yerlesen, sayiCsv(toplam.doluluk), "", "", "",
+    ]);
+  }
+  return {
+    ustBilgi: [[`YKS Program Analiz — ${kurumEtiketi() ?? "Kurum"} · ${kumeAdi()}`], [filtreOzeti()], []],
+    basliklar,
+    satirlar,
+    dosyaAdi: `yks-kurum-${aramaAnahtari(kurumEtiketi() ?? "kurum").replace(/ /g, "-")}-${filtre.olcut}.csv`,
+  };
+}
+
 /* -------------------------------------------------------------------- csv */
 
 function csvIndir() {
+  if (filtre.gorunum === "kurum") {
+    csvYaz(kurumCsv());
+    return;
+  }
   const yilIndeksleri = veri.meta.yillar.map((_, indeks) => indeks).filter((indeks) => filtre.yillar[indeks]);
   const { ilkler, takip } = gosterilecekSatirlar(sonSonuc, filtre.takip, AYAR.ilkN);
   const basliklar = [
@@ -992,11 +1435,16 @@ function csvIndir() {
     sayiCsv(satir.genelDoluluk),
   ]);
 
-  const ustBilgi = [
-    [`YKS Program Analiz — ${programBasligi()}`],
-    [filtreOzeti()],
-    [],
-  ];
+  csvYaz({
+    ustBilgi: [[`YKS Program Analiz — ${programBasligi()}`], [filtreOzeti()], []],
+    basliklar,
+    satirlar,
+    dosyaAdi: `yks-${aramaAnahtari(programBasligi()).replace(/ /g, "-")}-${filtre.olcut}.csv`,
+  });
+}
+
+/** Tabloyu noktalı virgülle ayrılmış, BOM'lu UTF-8 CSV olarak indirir (Excel tr-TR uyumlu). */
+function csvYaz({ ustBilgi, basliklar, satirlar, dosyaAdi }) {
   const icerik = [...ustBilgi, basliklar, ...satirlar]
     .map((satir) => satir.map(csvHucre).join(";"))
     .join("\r\n");
@@ -1004,7 +1452,7 @@ function csvIndir() {
   const dosya = new Blob(["﻿" + icerik], { type: "text/csv;charset=utf-8" });
   const baglanti = document.createElement("a");
   baglanti.href = URL.createObjectURL(dosya);
-  baglanti.download = `yks-${aramaAnahtari(programBasligi()).replace(/ /g, "-")}-${filtre.olcut}.csv`;
+  baglanti.download = dosyaAdi;
   baglanti.click();
   URL.revokeObjectURL(baglanti.href);
   bildir("CSV indirildi");
@@ -1032,6 +1480,12 @@ function urlYaz_() {
   if (filtre.takip != null) parametreler.set("v", veri.universiteler[filtre.takip].ad);
   if (filtre.yillar.some((deger) => deger === 0)) {
     parametreler.set("y", veri.meta.yillar.filter((_, indeks) => filtre.yillar[indeks]).join(","));
+  }
+  if (filtre.gorunum === "kurum") {
+    parametreler.set("g", "kurum");
+    if (filtre.kume === "SECIM") parametreler.set("ps", [...filtre.secim].join("|"));
+    else if (filtre.kume) parametreler.set("k", filtre.kume.slice("FAKULTE:".length));
+    if (filtre.esik !== (AYAR.dolulukEsigi ?? 70)) parametreler.set("e", filtre.esik);
   }
   history.replaceState(null, "", `#${parametreler.toString()}`);
 }
@@ -1071,6 +1525,19 @@ function urldenOku() {
     filtre.yillar = new Uint8Array(veri.meta.yillar.map((yil) => (secilen.has(yil) ? 1 : 0)));
     if (!filtre.yillar.some(Boolean)) filtre.yillar.fill(1);
   }
+  filtre.gorunum = parametreler.get("g") === "kurum" ? "kurum" : "program";
+  filtre.kume = null;
+  filtre.secim = new Set();
+  const secim = parametreler.get("ps");
+  const kumeAdi_ = parametreler.get("k");
+  if (secim) {
+    filtre.secim = new Set(secim.split("|").filter(Boolean));
+    if (filtre.secim.size) filtre.kume = "SECIM";
+  } else if (kumeAdi_ && (AYAR.fakulteler ?? {})[kumeAdi_]) {
+    filtre.kume = `FAKULTE:${kumeAdi_}`;
+  }
+  const esik = Number(parametreler.get("e"));
+  filtre.esik = parametreler.get("e") != null && Number.isFinite(esik) ? Math.min(150, Math.max(0, esik)) : AYAR.dolulukEsigi ?? 70;
   const programGirdi = $("#secim-program");
   if (programGirdi) programGirdi.value = filtre.program != null ? programBasligi() : "";
   const takipGirdi = $("#secim-takip");

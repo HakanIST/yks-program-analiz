@@ -38,8 +38,12 @@
 
   <!-- ------------------------------------------------ filtreler -->
   <section class="filtreler" aria-label="Filtreler">
+    <div class="gorunum-sekmeler" role="tablist" aria-label="Görünüm">
+      <button type="button" class="sekme" role="tab" data-gorunum="program" aria-selected="true">Program karşılaştırma</button>
+      <button type="button" class="sekme" role="tab" data-gorunum="kurum" aria-selected="false">Kurum görünümü</button>
+    </div>
     <div class="filtre-satir birincil">
-      <div class="alan genis">
+      <div class="alan genis" id="alan-program">
         <label for="secim-program">Bölüm / Program</label>
         <div class="combobox" id="cb-program">
           <input id="secim-program" type="text" role="combobox" aria-expanded="false" aria-controls="liste-program"
@@ -76,6 +80,15 @@
       <div id="on-ayar-listesi" class="cip-grup"></div>
     </div>
 
+    <div class="on-ayarlar kume-satir" id="kume-satir" role="group" aria-label="Program kümesi" hidden>
+      <span class="on-ayar-etiket">Program kümesi:</span>
+      <div id="kume-listesi" class="cip-grup"></div>
+      <label class="esik-alan" for="secim-esik">
+        Doluluk eşiği
+        <input id="secim-esik" type="number" min="0" max="150" step="1" inputmode="numeric"> %
+      </label>
+    </div>
+
     <details class="ek-filtreler" id="ek-filtreler">
       <summary>Ayrıntılı filtreler <span class="rozet" id="ek-filtre-rozet" hidden></span></summary>
       <div class="filtre-satir">
@@ -99,8 +112,8 @@
           <label for="secim-ogretim">Öğretim Şekli</label>
           <select id="secim-ogretim"></select>
         </div>
-        <div class="alan genis">
-          <label for="secim-takip">Ayrıca gösterilecek üniversite</label>
+        <div class="alan genis" id="alan-takip">
+          <label for="secim-takip" id="etiket-takip">Ayrıca gösterilecek üniversite</label>
           <div class="combobox" id="cb-takip">
             <input id="secim-takip" type="text" role="combobox" aria-expanded="false" aria-controls="liste-takip"
                    autocomplete="off" placeholder="Üniversite ara…">
@@ -162,6 +175,36 @@
       <div class="lejant" id="karsilastirma-lejant"></div>
     </div>
     <div id="karsilastirma-grafik" class="buyuk-grafik"></div>
+  </section>
+
+  <!-- ------------------------------------------------ kurum görünümü -->
+  <section id="kurum" class="panel kurum" hidden>
+    <div class="panel-baslik">
+      <div>
+        <h2 id="kurum-baslik">Kurum görünümü</h2>
+        <p id="kurum-aciklama" class="panel-alt"></p>
+      </div>
+      <div class="lejant" id="kurum-lejant"></div>
+    </div>
+    <div class="tablo-kaydir">
+      <table class="siralama kurum-tablo" id="tablo-kurum">
+        <thead id="kurum-bas"></thead>
+        <tbody id="kurum-govde"></tbody>
+        <tfoot id="kurum-alt"></tfoot>
+      </table>
+    </div>
+    <p class="dipnot" id="kurum-dipnot"></p>
+  </section>
+
+  <section class="panel karsilastirma" id="kurum-grafik-panel" hidden>
+    <div class="panel-baslik">
+      <div>
+        <h2>Programların yıllara göre değişimi</h2>
+        <p class="panel-alt" id="kurum-grafik-alt"></p>
+      </div>
+      <div class="lejant" id="kurum-grafik-lejant"></div>
+    </div>
+    <div id="kurum-grafik" class="buyuk-grafik"></div>
   </section>
 
 </main>

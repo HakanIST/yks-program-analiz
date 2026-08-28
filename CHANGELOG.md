@@ -2,6 +2,19 @@
 
 Bu proje [Semantik Sürümleme](https://semver.org/lang/tr/) kullanır.
 
+## [1.2.0] — 2026-08-28
+
+Kurum görünümü: bir üniversitenin tüm programlarının yıllara göre tablosu (#3).
+
+### Eklendi
+- **Kurum görünümü** sekmesi (`#g=kurum`): takip edilen üniversitenin her bölümü bir satır; yıllara göre seçili ölçüt, dönem ortalaması, kontenjan, yerleşen, son iki yıl farkı, seçili kapsamdaki gerçek sıra (`11 / 16`) ve mini trend. Öğretim dili farklı olan programlar ayrı satırdır (ÖSYM adlandırması: `X`, `X (İngilizce)`); satıra tıklayınca o programın üniversite karşılaştırmasına geçilir.
+- **Program kümesi** çipleri: tüm programlar, `config.js`'teki `fakulteler` haritasından gelen birimler (örnek: MDBF) ve satır kutucuklarıyla elle seçim; seçim bağlantıda saklanır (`k=`, `ps=`).
+- **Doluluk eşiği** (varsayılan `AYAR.dolulukEsigi` = 70): eşiğin altındaki hücreler ve ortalamalar vurgulanır, özet kartında eşik altı program sayısı; bağlantıda `e=`.
+- Toplam satırı (kümedeki programların toplam yerleşen / toplam kontenjan) ve küme ≤ 10 programsa hepsini tek grafikte gösteren çizgi grafik.
+- Kurum görünümü için CSV dışa aktarımı (öğretim dili, sıra ve son iki yıl farkı sütunlarıyla, toplam satırı dahil).
+- Sıralama motoru: saf `kurumTablosu()` ve `kurumToplami()`; 4 yeni test (31 toplam).
+- Grafik paletine 9. ve 10. renk (10 seriye kadar tekrarsız).
+
 ## [1.1.0] — 2026-08-28
 
 Türkçe ve İngilizce bölümlerin ayrı raporlanabilmesi (#1).

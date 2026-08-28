@@ -32,6 +32,31 @@ export const AYAR = {
   /** Tabloda gösterilecek üniversite sayısı. */
   ilkN: 20,
 
+  /**
+   * İsteğe bağlı: fakülte/birim → program listesi. Kurum görünümünde hazır
+   * "program kümesi" çipi olarak sunulur; fakülte yapısı ÖSYM verisinde
+   * bulunmadığı için kurum kendisi tanımlar. Adlar kurum görünümündeki satır
+   * adlarıyla aynı yazılır (Türkçe için ek yok, diğer diller parantez içinde);
+   * büyük/küçük harf ve noktalama farkları yok sayılır.
+   */
+  fakulteler: {
+    "MDBF": [
+      "Adli Bilimler",
+      "Adli Bilimler (İngilizce)",
+      "Bilgisayar Mühendisliği (İngilizce)",
+      "Biyomühendislik (İngilizce)",
+      "Elektrik-Elektronik Mühendisliği (İngilizce)",
+      "Endüstri Mühendisliği (İngilizce)",
+      "Kimya Mühendisliği (İngilizce)",
+      "Moleküler Biyoloji ve Genetik",
+      "Moleküler Biyoloji ve Genetik (İngilizce)",
+      "Yazılım Mühendisliği (İngilizce)",
+    ],
+  },
+
+  /** Kurum görünümünde doluluk eşiği (%); altındaki hücreler vurgulanır. */
+  dolulukEsigi: 70,
+
   /** Kaynak kod bağlantısı (üst köşedeki ikon ve alt bant). */
   repo: "https://github.com/HakanIST/yks-program-analiz",
 

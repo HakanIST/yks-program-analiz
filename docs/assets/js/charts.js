@@ -15,6 +15,7 @@ const NS = "http://www.w3.org/2000/svg";
 export const SERI_RENKLERI = [
   "var(--seri-1)", "var(--seri-2)", "var(--seri-3)", "var(--seri-4)",
   "var(--seri-5)", "var(--seri-6)", "var(--seri-7)", "var(--seri-8)",
+  "var(--seri-9)", "var(--seri-10)",
 ];
 
 function el(ad, ozellikler = {}) {
