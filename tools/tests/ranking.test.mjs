@@ -22,7 +22,7 @@ globalThis.fetch = async (yol) => {
 };
 
 const { veriYukle } = await import(path.join(kok, "docs/assets/js/data.js"));
-const { hesapla, gosterilecekSatirlar } = await import(path.join(kok, "docs/assets/js/ranking.js"));
+const { hesapla, gosterilecekSatirlar, dilKirilimi } = await import(path.join(kok, "docs/assets/js/ranking.js"));
 
 const veri = await veriYukle("data");
 
@@ -209,6 +209,73 @@ test("yıl filtresi toplamları düşürüyor", () => {
   assert.ok(tekYil.kayit < hepsi.kayit);
 });
 
+/* ------------------------------------------------------------ dil ayrımı */
+
+const mbg = () => programIndeksi("Moleküler Biyoloji ve Genetik");
+const istVakif = { bolge: { tip: "IST" }, tur: { tip: "GRUP", deger: "vakif" } };
+const dilIndeksi = (ad) => veri.meta.diller.indexOf(ad);
+
+test("çok dilli program dil listesini taşıyor (MBG: Türkçe + İngilizce)", () => {
+  const program = veri.programlar[mbg()];
+  assert.ok(program.diller.includes(dilIndeksi("Türkçe")), "Türkçe yok");
+  assert.ok(program.diller.includes(dilIndeksi("İngilizce")), "İngilizce yok");
+  const kurum = veri.universiteProgramlari(uniIndeksi("ÜSKÜDAR ÜNİVERSİTESİ"));
+  assert.deepEqual([...kurum.get(mbg())].sort(), [dilIndeksi("Türkçe"), dilIndeksi("İngilizce")].sort());
+});
+
+test("birleşik görünümde özet ve satır birden fazla dil bildiriyor", () => {
+  const sonuc = hesapla(veri, filtreKur({ program: mbg(), ...istVakif }));
+  assert.ok(sonuc.ozet.diller.length > 1, "özet tek dil bildirdi");
+  const satir = sonuc.satirlar.find((s) => s.uni.indeks === uniIndeksi("ÜSKÜDAR ÜNİVERSİTESİ"));
+  assert.deepEqual(satir.diller, [dilIndeksi("Türkçe"), dilIndeksi("İngilizce")]);
+});
+
+test("dil filtresi Üsküdar MBG'yi ayrı bölümlere ayırıyor (2026)", () => {
+  // MDBF'nin raporlama talebi: TR ve İNG bölümlerinin doluluğu ayrı ayrı okunabilmeli.
+  const sonYil = veri.meta.yillar.indexOf(2026);
+  const uskudar = uniIndeksi("ÜSKÜDAR ÜNİVERSİTESİ");
+  const oku = (dil) =>
+    hesapla(veri, filtreKur({ program: mbg(), dil, ...istVakif })).satirlar.find((s) => s.uni.indeks === uskudar).yillik[sonYil];
+  const tr = oku(dilIndeksi("Türkçe"));
+  const ing = oku(dilIndeksi("İngilizce"));
+  assert.deepEqual([tr.kontenjan, tr.yerlesen], [49, 38]);
+  assert.deepEqual([ing.kontenjan, ing.yerlesen], [74, 46]);
+  assert.ok(tr.doluluk > 70 && ing.doluluk < 70, "TR %70 üstünde, İNG altında olmalı");
+  const birlesik = oku(null);
+  assert.equal(birlesik.kontenjan, tr.kontenjan + ing.kontenjan);
+  assert.equal(birlesik.yerlesen, tr.yerlesen + ing.yerlesen);
+});
+
+test("dilKirilimi birleşik satırla ve dil filtreli hesapla ile tutarlı", () => {
+  const uskudar = uniIndeksi("ÜSKÜDAR ÜNİVERSİTESİ");
+  const birlesik = hesapla(veri, filtreKur({ program: mbg(), ...istVakif })).satirlar.find((s) => s.uni.indeks === uskudar);
+  const kirilim = dilKirilimi(veri, birlesik);
+  assert.equal(kirilim.length, 2);
+  for (const dil of kirilim) {
+    const ayri = hesapla(veri, filtreKur({ program: mbg(), dil: dil.dil, ...istVakif })).satirlar.find((s) => s.uni.indeks === uskudar);
+    assert.equal(dil.toplamKontenjan, ayri.toplamKontenjan, `${dil.ad} kontenjan`);
+    assert.equal(dil.toplamYerlesen, ayri.toplamYerlesen, `${dil.ad} yerleşen`);
+    assert.ok(Math.abs(dil.ortDoluluk - ayri.ortDoluluk) < 1e-9, `${dil.ad} ortalama doluluk`);
+    dil.yillik.forEach((h, yil) => {
+      const beklenen = ayri.yillik[yil];
+      if (!h) return assert.equal(beklenen, null);
+      assert.equal(h.kontenjan, beklenen.kontenjan);
+      assert.equal(h.enBuyuk, beklenen.enBuyuk);
+    });
+  }
+  birlesik.yillik.forEach((h, yil) => {
+    if (!h) return;
+    const toplam = kirilim.reduce((t, dil) => t + (dil.yillik[yil]?.kontenjan ?? 0), 0);
+    assert.equal(toplam, h.kontenjan, `${veri.meta.yillar[yil]} kırılım toplamı`);
+  });
+});
+
+test("tek dilli programda kırılım tek satır, özet tek dil", () => {
+  const sonuc = hesapla(veri, filtreKur({ program: mbg(), dil: dilIndeksi("İngilizce"), ...istVakif }));
+  assert.deepEqual(sonuc.ozet.diller, [dilIndeksi("İngilizce")]);
+  for (const satir of sonuc.satirlar) assert.equal(dilKirilimi(veri, satir).length, 1);
+});
+
 /* --------------------------------------------- pandas ile çapraz doğrulama */
 
 const beklenenYol = path.join(kok, "tools/tests/expected.json");
@@ -229,6 +296,7 @@ if (beklenen) {
           bolge: durum.bolge,
           tur: durum.tur,
           olcut: durum.olcut,
+          dil: durum.dil != null ? dilIndeksi(durum.dil) : null,
         })
       );
       assert.equal(sonuc.ozet.universite, durum.ozet.universite, "üniversite sayısı");

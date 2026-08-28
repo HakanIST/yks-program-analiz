@@ -337,6 +337,31 @@ tr.ayirac td span {
 .detay-varyant { margin-top: 12px; font-size: 12px; color: var(--murekkep-2); }
 .detay-varyant ul { margin: 5px 0 0; padding-left: 16px; }
 .detay-varyant li { margin-bottom: 2px; }
+
+/* ---------------------------------------------------- dil ayrımı */
+/* Birleşik görünüm uyarısı: tablo başlığının hemen altında, dikkat çekici ama sessiz */
+.dil-uyari {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 0 18px 10px; padding: 8px 12px; font-size: 12.5px; line-height: 1.4;
+  color: var(--murekkep-2); background: var(--vurgu-zemin);
+  border: 1px solid transparent; border-radius: var(--yuvarlak-kucuk);
+}
+.cip.kucuk { padding: 3px 10px; font-size: 12px; }
+.dil-rozet {
+  display: inline-block; padding: 0 6px; border-radius: 999px; font-size: 10.5px; font-weight: 650;
+  background: var(--vurgu-zemin); color: var(--vurgu); letter-spacing: .02em; white-space: nowrap;
+}
+.detay-kirilim { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--cizgi-2); }
+.detay-kirilim-baslik { display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; }
+.detay-kirilim-baslik span { font-size: 11.5px; color: var(--murekkep-3); }
+/* Dar panelde yıl + (dil × 3) sütun sığsın diye sıkı dizgi; yine de taşarsa yatay kaydırma */
+.detay-kirilim .tablo-kaydir { overflow-x: auto; }
+.detay-kirilim .detay-tablo { font-size: 11.5px; margin-top: 8px; }
+.detay-kirilim .detay-tablo th, .detay-kirilim .detay-tablo td { padding: 5px 3px; white-space: nowrap; }
+.detay-kirilim .detay-tablo th { font-size: 10px; letter-spacing: .02em; }
+.detay-kirilim .detay-tablo th.grup { text-align: center; border-bottom: none; padding-bottom: 1px; color: var(--murekkep-1); font-size: 11px; }
+.detay-kirilim .detay-tablo tr.ozet td { font-weight: 650; border-top: 2px solid var(--cizgi); border-bottom: none; }
+.detay-kirilim .cip-grup { margin-top: 10px; }
 .detay-bos { padding: 40px 18px; text-align: center; color: var(--murekkep-3); font-size: 13.5px; }
 
 /* ------------------------------------------------------------- grafikler */

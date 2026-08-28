@@ -2,6 +2,25 @@
 
 Bu proje [Semantik Sürümleme](https://semver.org/lang/tr/) kullanır.
 
+## [1.1.0] — 2026-08-28
+
+Türkçe ve İngilizce bölümlerin ayrı raporlanabilmesi (#1).
+
+### Eklendi
+- Program listesinde birden fazla dilde sunulan programlar için dil varyantları ayrı madde olarak listelenir (ör. `Moleküler Biyoloji ve Genetik (İngilizce)`); seçilince öğretim dili filtresi otomatik uygulanır. Yalın ad "tüm diller" anlamına gelir; burs/ücret varyantları eskisi gibi birleşik kalır.
+- Birleşik görünümde birden fazla öğretim dili varsa tablo başlığının altında görünür uyarı ve dil bazına geçiş çipleri; dil filtresi açıkken geri dönüş çipi.
+- Üniversite detay panelinde **öğretim diline göre kırılım** tablosu (yıl × dil: kontenjan, yerleşen, doluluk / en büyük puan, dönem toplamı ve ortalaması) ve "Yalnızca …" kısayolları.
+- Sıralama tablosunda birden fazla dili kapsayan satırlarda `Türkçe + İngilizce` rozeti.
+- CSV dışa aktarımına `Öğretim dili` sütunu; dosya adı ve başlık dil filtresini içerir.
+- Sıralama motoru: `ozet.diller`, satır bazında `diller` ve saf `dilKirilimi()` fonksiyonu; pandas çapraz doğrulamasına dil filtreli iki senaryo.
+
+### Düzeltildi
+- CI'daki "üretilen veri depodakiyle aynı mı" kontrolü `meta.json` içindeki üretim tarihini (`uretim`) yok sayar; önceden yalnızca verinin üretildiği gün geçebiliyordu.
+
+### Değiştirildi
+- Tablo dipnotu ve README, veri kaynağının ÖSYM ilk yerleştirme olduğunu ve ek yerleştirme ile sonradan eklenen ek kontenjanların dahil olmadığını açıkça belirtir (kurum içi tablolarla küçük farkların nedeni).
+- Tablo başlığı, filtre özeti ve program kutusu dil filtresi açıkken `(İngilizce)` ekini gösterir.
+
 ## [1.0.0] — 2026-08-22
 
 İlk sürüm.

@@ -32,7 +32,8 @@ her üniversitenin yıllık değişimi grafikle izlenir ve takip edilen kurum il
 
 | Yetenek | Açıklama |
 |---|---|
-| **Program seçimi** | 929 temel program adı içinde anlık arama. Burslu/ücretli/İngilizce gibi varyantlar tek program altında toplanır. Liste varsayılan olarak **takip edilen kurumun programlarıyla** sınırlıdır; tek kutucukla tüm programlara genişler. |
+| **Program seçimi** | 929 temel program adı içinde anlık arama. Burslu/ücretli varyantlar tek program altında toplanır; birden fazla dilde sunulan programlarda **her öğretim dili ayrı madde** olarak da listelenir (`Moleküler Biyoloji ve Genetik (İngilizce)`), çünkü Türkçe ve İngilizce bölümler ayrı bölümlerdir. Liste varsayılan olarak **takip edilen kurumun programlarıyla** sınırlıdır; tek kutucukla tüm programlara genişler. |
+| **Dil kırılımı** | Birleşik görünümde birden fazla dil varsa uyarı ve dil bazına geçiş çipleri; detay panelinde yıl × dil kırılım tablosu; tabloda `Türkçe + İngilizce` rozeti; CSV'de öğretim dili sütunu. |
 | **Üniversite kapsamı** | Türkiye geneli, İstanbul, tek tek 81 il, KKTC, yurt dışı; devlet / vakıf / tüm türler. Talep edilen altı hazır kapsam tek tıkla seçilebilir. |
 | **İlk 20 sıralaması** | Seçilen ölçütün 2021–2026 ortalamasına göre yüksekten düşüğe. Yıllık değerler, ortalama, kontenjan ve yerleşen aynı satırda. |
 | **İki ölçüt** | *En Büyük Puan* (ortalama, azalan) ve *Doluluk Oranı* (ortalama azalan, **eşitlikte kontenjanı yüksek olan üstte**). |
@@ -111,6 +112,12 @@ Bir üniversitenin aynı programda birden çok varyantı olabilir (Burslu + %50 
 
 > Vakıf üniversitelerinde en büyük puan çoğunlukla burslu kontenjandan gelir. Karşılaştırmayı daraltmak isteyen kullanıcı **Ücret / Burs** filtresinden yalnızca "Burslu" ya da yalnızca "Ücretli" seçebilir; tüm hesaplar filtreye göre yeniden yapılır.
 
+**Öğretim dili bir varyant değil, ayrı bölümdür.** `Moleküler Biyoloji ve Genetik` ile `Moleküler Biyoloji ve Genetik (İngilizce)` YÖK nezdinde iki ayrı bölümdür ve doluluk gibi kurumsal ölçütler bölüm bazında değerlendirilir. Bu yüzden:
+
+- Program listesinde çok dilli programlar için her dil ayrı madde olarak sunulur; yalın ad "tüm diller" (birleşik) anlamındadır ve eski bağlantılarla uyumludur.
+- Birleşik görünümde birden fazla dil varsa tablo üstünde uyarı gösterilir; satırda `Türkçe + İngilizce` rozeti bulunur.
+- Detay panelindeki kırılım tablosu (`ranking.js` → `dilKirilimi`) aynı birleştirme kurallarını dil boyutunu ayrı tutarak uygular; dil filtreli `hesapla` ile birebir aynı sonucu verir (testlerle doğrulanır).
+
 ### 4. Ortalama ve sıralama
 
 - **En Büyük Puan ölçütü:** üniversitenin veri bulunan yıllardaki en büyük puanlarının aritmetik ortalaması, **yüksekten düşüğe**.
@@ -140,6 +147,8 @@ Her iki ölçütte de **değer arttıkça çizgi yukarı çıkar**: en büyük p
 ÖSYM *Yükseköğretim Programları ve Kontenjanları Kılavuzu* ekleri, **ilk yerleştirme** sonuçları, 2021–2026. Alanlar: yıl, lisans/ön lisans, üniversite türü, üniversite, bölüm/program adı, puan türü, kontenjan, yerleşen, doluluk oranı, en küçük puan, en büyük puan.
 
 Ham veri `data/raw/yks-ham.csv.gz` içinde bulunur (gzip'li CSV, ~2,5 MB, 128.832 satır).
+
+> **Kurum içi tablolarla fark:** Kontenjan ve yerleşen sayıları ÖSYM **ilk yerleştirme** kılavuz eklerinden alınır. Ek yerleştirme, kesin kayıt sayıları ve sonradan eklenen ek kontenjanlar (ör. deprem kontenjanı) dahil değildir; Rektörlük/ÖİDB tablolarında burslu kontenjanların 1–2 fazla görünmesi ve doluluk oranlarının ~1–2 puan ayrışması bundandır.
 
 ### Üretilen dosyalar
 
@@ -197,7 +206,7 @@ python3 tools/build_dataset.py --girdi data/raw/yks-ham.csv.gz
 # beklenen sonuçları pandas ile bağımsız olarak üret
 python3 tools/tests/groundtruth.py
 
-# sıralama motorunu test et (17 test)
+# sıralama motorunu test et (27 test)
 node tools/tests/ranking.test.mjs
 ```
 
