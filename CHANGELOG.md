@@ -14,6 +14,9 @@ Türkçe ve İngilizce bölümlerin ayrı raporlanabilmesi (#1).
 - CSV dışa aktarımına `Öğretim dili` sütunu; dosya adı ve başlık dil filtresini içerir.
 - Sıralama motoru: `ozet.diller`, satır bazında `diller` ve saf `dilKirilimi()` fonksiyonu; pandas çapraz doğrulamasına dil filtreli iki senaryo.
 
+### Düzeltildi
+- CI'daki "üretilen veri depodakiyle aynı mı" kontrolü `meta.json` içindeki üretim tarihini (`uretim`) yok sayar; önceden yalnızca verinin üretildiği gün geçebiliyordu.
+
 ### Değiştirildi
 - Tablo dipnotu ve README, veri kaynağının ÖSYM ilk yerleştirme olduğunu ve ek yerleştirme ile sonradan eklenen ek kontenjanların dahil olmadığını açıkça belirtir (kurum içi tablolarla küçük farkların nedeni).
 - Tablo başlığı, filtre özeti ve program kutusu dil filtresi açıkken `(İngilizce)` ekini gösterir.
