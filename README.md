@@ -34,6 +34,7 @@ her üniversitenin yıllık değişimi grafikle izlenir ve takip edilen kurum il
 |---|---|
 | **Program seçimi** | 929 temel program adı içinde anlık arama. Burslu/ücretli varyantlar tek program altında toplanır; birden fazla dilde sunulan programlarda **her öğretim dili ayrı madde** olarak da listelenir (`Moleküler Biyoloji ve Genetik (İngilizce)`), çünkü Türkçe ve İngilizce bölümler ayrı bölümlerdir. Liste varsayılan olarak **takip edilen kurumun programlarıyla** sınırlıdır; tek kutucukla tüm programlara genişler. |
 | **Dil kırılımı** | Birleşik görünümde birden fazla dil varsa uyarı ve dil bazına geçiş çipleri; detay panelinde yıl × dil kırılım tablosu; tabloda `Türkçe + İngilizce` rozeti; CSV'de öğretim dili sütunu. |
+| **Kurum görünümü** | Eksenin tersi: takip edilen üniversitenin **tüm bölümleri** satır satır, yıllara göre doluluk/puan, dönem ortalaması, son iki yıl farkı ve seçili kapsamdaki gerçek sıra (`11 / 16`). Hazır program kümeleri (`config.js` → `fakulteler`, ör. MDBF) ya da kutucukla elle seçim; doluluk eşiği (varsayılan %70) altındaki hücreler vurgulanır; toplam satırı, ≤ 10 programda çizgi grafik, CSV. Satıra tıklayınca o programın karşılaştırmasına geçilir. |
 | **Üniversite kapsamı** | Türkiye geneli, İstanbul, tek tek 81 il, KKTC, yurt dışı; devlet / vakıf / tüm türler. Talep edilen altı hazır kapsam tek tıkla seçilebilir. |
 | **İlk 20 sıralaması** | Seçilen ölçütün 2021–2026 ortalamasına göre yüksekten düşüğe. Yıllık değerler, ortalama, kontenjan ve yerleşen aynı satırda. |
 | **İki ölçüt** | *En Büyük Puan* (ortalama, azalan) ve *Doluluk Oranı* (ortalama azalan, **eşitlikte kontenjanı yüksek olan üstte**). |
@@ -206,7 +207,7 @@ python3 tools/build_dataset.py --girdi data/raw/yks-ham.csv.gz
 # beklenen sonuçları pandas ile bağımsız olarak üret
 python3 tools/tests/groundtruth.py
 
-# sıralama motorunu test et (27 test)
+# sıralama motorunu test et (31 test)
 node tools/tests/ranking.test.mjs
 ```
 
@@ -228,10 +229,16 @@ export const AYAR = {
   varsayilanProgram: "Psikoloji",               // açılışta seçili program
   varsayilanKapsam: "ist-vakif",                // açılıştaki kapsam: tumu | devlet | vakif | ist | ist-devlet | ist-vakif
   ilkN: 20,                                     // tabloda gösterilecek üniversite sayısı
+  fakulteler: {                                 // isteğe bağlı: kurum görünümünde hazır program kümeleri
+    "MDBF": ["Bilgisayar Mühendisliği (İngilizce)", "Moleküler Biyoloji ve Genetik", /* … */],
+  },
+  dolulukEsigi: 70,                             // kurum görünümünde vurgulanacak doluluk eşiği (%)
   repo: "https://github.com/HakanIST/yks-program-analiz",
   veriDizini: "data",
 };
 ```
+
+`fakulteler` içindeki adlar kurum görünümündeki satır adlarıyla aynı yazılır (Türkçe program için ek yok, diğer diller parantez içinde); fakülte yapısı ÖSYM verisinde bulunmadığı için kurum kendisi tanımlar.
 
 Takip edilen üniversite ayrıca arayüzdeki **Ayrıntılı filtreler → Ayrıca gösterilecek üniversite** alanından da değiştirilebilir; seçim paylaşılabilir bağlantıya işlenir.
 

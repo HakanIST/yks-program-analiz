@@ -274,6 +274,82 @@ export function dilKirilimi(veri, satir) {
     });
 }
 
+/**
+ * Kurum görünümü: bir üniversitenin tüm programları, satır başına bir bölüm.
+ *
+ * Fakülte raporları "bölümlerimizin doluluğu yıllara göre nasıl değişti?"
+ * sorusunu sorar; bu, program → üniversiteler ekseninin tersidir. Her satır
+ * için `hesapla` seçili kapsamla çalıştırılır, böylece bölümün kapsam içindeki
+ * gerçek sırası da gelir. Öğretim dili ayrı bölüm sayılır: kurum bir programı
+ * birden fazla dilde sunuyorsa her dil ayrı satırdır (#1). Ad yazımı ÖSYM
+ * kılavuzunu izler: Türkçe için ek yok, diğer diller parantez içinde.
+ *
+ * Dönüş: { satirlar: [{ program, dil, etiket, satir, sira, siralanan, sonFark }],
+ *          toplam: { yillik: [{kontenjan, yerlesen, doluluk}|null], kontenjan, yerlesen, doluluk } }
+ */
+export function kurumTablosu(veri, filtre, uniIndeks) {
+  const { meta } = veri;
+  const harita = uniIndeks == null ? null : veri.universiteProgramlari(uniIndeks);
+  const satirlar = [];
+  if (!harita) return { satirlar, toplam: bosToplam(meta.yillar.length) };
+
+  const secilenYillar = meta.yillar.map((_, indeks) => indeks).filter((indeks) => filtre.yillar[indeks]);
+  const olcut = filtre.olcut === "doluluk" ? "doluluk" : "enBuyuk";
+
+  for (const [programIndeks, kurumDilleri] of harita) {
+    const program = veri.programlar[programIndeks];
+    // Ülke genelinde tek dilli program: dil boyutu anlamsız, filtre uygulanmaz.
+    const diller = program.diller.length > 1 ? [...kurumDilleri].sort((a, b) => a - b) : [null];
+    for (const dil of diller) {
+      const sonuc = hesapla(veri, { ...filtre, program: programIndeks, dil });
+      const satir = sonuc.satirlar.find((aday) => aday.uni.indeks === uniIndeks);
+      if (!satir) continue; // kurum seçili kapsam/yıl/ek filtrelerin dışında
+      const dilAdi = dil == null ? null : meta.diller[dil];
+      const etiket = dilAdi && dilAdi !== "Türkçe" ? `${program.ad} (${dilAdi})` : program.ad;
+
+      // Son iki seçili yılın farkı (sunumlardaki "son 2 yıl fark" sütunu)
+      const degerler = secilenYillar.map((yil) => satir.yillik[yil]?.[olcut] ?? null);
+      const son = degerler.at(-1);
+      const onceki = degerler.length > 1 ? degerler.at(-2) : null;
+      const sonFark = son != null && onceki != null ? son - onceki : null;
+
+      satirlar.push({
+        program: programIndeks,
+        dil,
+        etiket,
+        satir,
+        sira: satir.sira,
+        siralanan: sonuc.ozet.siralanan,
+        sonFark,
+      });
+    }
+  }
+
+  return { satirlar, toplam: kurumToplami(satirlar, meta.yillar.length) };
+}
+
+function bosToplam(yilSayisi) {
+  return { yillik: new Array(yilSayisi).fill(null), kontenjan: 0, yerlesen: 0, doluluk: null };
+}
+
+/** Satır kümesinin yıl bazında kontenjan/yerleşen toplamı — fakülte geneli için. */
+export function kurumToplami(satirlar, yilSayisi) {
+  const toplam = bosToplam(yilSayisi);
+  for (const { satir } of satirlar) {
+    satir.yillik.forEach((hucre, yil) => {
+      if (!hucre) return;
+      const t = toplam.yillik[yil] ?? (toplam.yillik[yil] = { kontenjan: 0, yerlesen: 0, doluluk: null });
+      t.kontenjan += hucre.kontenjan;
+      t.yerlesen += hucre.yerlesen;
+      t.doluluk = t.kontenjan ? (t.yerlesen / t.kontenjan) * 100 : null;
+      toplam.kontenjan += hucre.kontenjan;
+      toplam.yerlesen += hucre.yerlesen;
+    });
+  }
+  toplam.doluluk = toplam.kontenjan ? (toplam.yerlesen / toplam.kontenjan) * 100 : null;
+  return toplam;
+}
+
 /** İlk N satır + (listede yoksa) takip edilen üniversitenin gerçek sıralı satırı. */
 export function gosterilecekSatirlar(sonuc, takipIndeksi, adet = 20) {
   const ilkler = sonuc.satirlar.slice(0, adet);
