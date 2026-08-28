@@ -67,6 +67,7 @@ export function hesapla(veri, filtre) {
   let kayitSayisi = 0;
   const varyantKumesi = new Set();
   const programKumesi = new Set();
+  const dilKumesi = new Set();
 
   for (let sira = 0; sira < uzunluk; sira++) {
     const i = kayitlar ? kayitlar[sira] : sira;
@@ -83,9 +84,11 @@ export function hesapla(veri, filtre) {
 
     let grup = gruplar.get(u);
     if (!grup) {
-      grup = { u, yillik: new Array(yilSayisi).fill(null) };
+      grup = { u, yillik: new Array(yilSayisi).fill(null), diller: new Set() };
       gruplar.set(u, grup);
     }
+    grup.diller.add(sutun.d[i]);
+    dilKumesi.add(sutun.d[i]);
     let hucre = grup.yillik[yil];
     if (!hucre) {
       hucre = { kontenjan: 0, yerlesen: 0, min: null, max: null, kayitlar: [] };
@@ -153,6 +156,7 @@ export function hesapla(veri, filtre) {
     satirlar.push({
       uni: veri.universiteler[grup.u],
       yillik,
+      diller: [...grup.diller].sort((a, b) => a - b),
       ortPuan: puanAdet ? puanToplam / puanAdet : null,
       ortDoluluk: dolulukAdet ? dolulukToplam / dolulukAdet : null,
       yilAdedi: puanAdet,
@@ -187,6 +191,7 @@ export function hesapla(veri, filtre) {
       universite: gruplar.size,
       varyant: varyantKumesi.size,
       program: programKumesi.size,
+      diller: [...dilKumesi].sort((a, b) => a - b),
       kontenjan: toplamKontenjan,
       yerlesen: toplamYerlesen,
       doluluk: toplamKontenjan ? (toplamYerlesen / toplamKontenjan) * 100 : null,
@@ -194,6 +199,79 @@ export function hesapla(veri, filtre) {
       siralanan: sira,
     },
   };
+}
+
+/**
+ * Bir üniversite satırının öğretim diline göre kırılımı.
+ *
+ * Türkçe ve İngilizce bölümler YÖK nezdinde ayrı bölümlerdir ve doluluk gibi
+ * kurumsal ölçütler bölüm bazında değerlendirilir; birleşik satır yeterli
+ * olmadığında bu fonksiyon aynı satırı dil bazında yeniden toplar. Birleştirme
+ * kuralları `hesapla` ile aynıdır, yalnızca dil boyutu ayrı tutulur.
+ *
+ * Dönüş: dil indeksine göre sıralı [{ dil, ad, yillik: [hücre|null], ... }]
+ */
+export function dilKirilimi(veri, satir) {
+  const { sutun, meta } = veri;
+  const carpan = meta.puanCarpani;
+  const yilSayisi = meta.yillar.length;
+  const gruplar = new Map(); // dil -> yıllık ham hücreler
+
+  satir.yillik.forEach((hucre, yil) => {
+    if (!hucre) return;
+    for (const i of hucre.kayitlar) {
+      const d = sutun.d[i];
+      let grup = gruplar.get(d);
+      if (!grup) gruplar.set(d, (grup = new Array(yilSayisi).fill(null)));
+      let ham = grup[yil];
+      if (!ham) grup[yil] = ham = { kontenjan: 0, yerlesen: 0, min: null, max: null, kayitlar: [] };
+      ham.kontenjan += sutun.k[i];
+      ham.yerlesen += sutun.ye[i];
+      ham.kayitlar.push(i);
+      const enKucuk = sutun.mn[i];
+      const enBuyuk = sutun.mx[i];
+      if (enKucuk !== meta.puanYok) ham.min = ham.min == null ? enKucuk : Math.min(ham.min, enKucuk);
+      if (enBuyuk !== meta.puanYok) ham.max = ham.max == null ? enBuyuk : Math.max(ham.max, enBuyuk);
+    }
+  });
+
+  return [...gruplar.keys()]
+    .sort((a, b) => a - b)
+    .map((dil) => {
+      let dolulukToplam = 0;
+      let dolulukAdet = 0;
+      let puanToplam = 0;
+      let puanAdet = 0;
+      let kontenjanToplam = 0;
+      let yerlesenToplam = 0;
+      const yillik = gruplar.get(dil).map((ham) => {
+        if (!ham) return null;
+        const doluluk = ham.kontenjan > 0 ? (ham.yerlesen / ham.kontenjan) * 100 : null;
+        const enBuyuk = ham.max != null ? ham.max / carpan : null;
+        const enKucuk = ham.min != null ? ham.min / carpan : null;
+        if (doluluk != null) {
+          dolulukToplam += doluluk;
+          dolulukAdet++;
+        }
+        if (enBuyuk != null) {
+          puanToplam += enBuyuk;
+          puanAdet++;
+        }
+        kontenjanToplam += ham.kontenjan;
+        yerlesenToplam += ham.yerlesen;
+        return { kontenjan: ham.kontenjan, yerlesen: ham.yerlesen, doluluk, enBuyuk, enKucuk, kayitlar: ham.kayitlar };
+      });
+      return {
+        dil,
+        ad: meta.diller[dil],
+        yillik,
+        ortDoluluk: dolulukAdet ? dolulukToplam / dolulukAdet : null,
+        ortPuan: puanAdet ? puanToplam / puanAdet : null,
+        toplamKontenjan: kontenjanToplam,
+        toplamYerlesen: yerlesenToplam,
+        genelDoluluk: kontenjanToplam ? (yerlesenToplam / kontenjanToplam) * 100 : null,
+      };
+    });
 }
 
 /** İlk N satır + (listede yoksa) takip edilen üniversitenin gerçek sıralı satırı. */

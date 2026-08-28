@@ -293,6 +293,118 @@
      511.5147
     ]
    ]
+  },
+  {
+   "ad": "Moleküler Biyoloji ve Genetik · İstanbul vakıf · doluluk · İngilizce",
+   "program": "Moleküler Biyoloji ve Genetik",
+   "bolge": {
+    "tip": "IST"
+   },
+   "tur": {
+    "tip": "GRUP",
+    "deger": "vakif"
+   },
+   "olcut": "doluluk",
+   "dil": "İngilizce",
+   "ozet": {
+    "universite": 11,
+    "kontenjan": 2953,
+    "yerlesen": 2589
+   },
+   "ilk10": [
+    [
+     "ACIBADEM MEHMET ALİ AYDINLAR ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "BİRUNİ ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "KOÇ ÜNİVERSİTESİ",
+     100.0
+    ],
+    [
+     "KADİR HAS ÜNİVERSİTESİ",
+     98.8636
+    ],
+    [
+     "BAHÇEŞEHİR ÜNİVERSİTESİ",
+     92.7063
+    ],
+    [
+     "HALİÇ ÜNİVERSİTESİ",
+     88.1412
+    ],
+    [
+     "İSTANBUL ATLAS ÜNİVERSİTESİ",
+     85.25
+    ],
+    [
+     "ÜSKÜDAR ÜNİVERSİTESİ",
+     82.953
+    ],
+    [
+     "İSTİNYE ÜNİVERSİTESİ",
+     78.8142
+    ],
+    [
+     "İSTANBUL AREL ÜNİVERSİTESİ",
+     64.5045
+    ]
+   ]
+  },
+  {
+   "ad": "Moleküler Biyoloji ve Genetik · İstanbul vakıf · doluluk · Türkçe",
+   "program": "Moleküler Biyoloji ve Genetik",
+   "bolge": {
+    "tip": "IST"
+   },
+   "tur": {
+    "tip": "GRUP",
+    "deger": "vakif"
+   },
+   "olcut": "doluluk",
+   "dil": "Türkçe",
+   "ozet": {
+    "universite": 8,
+    "kontenjan": 1635,
+    "yerlesen": 1323
+   },
+   "ilk10": [
+    [
+     "BİRUNİ ÜNİVERSİTESİ",
+     95.2381
+    ],
+    [
+     "İSTANBUL SAĞLIK VE TEKNOLOJİ ÜNİVERSİTESİ",
+     93.3333
+    ],
+    [
+     "İSTANBUL YENİ YÜZYIL ÜNİVERSİTESİ",
+     87.0
+    ],
+    [
+     "İSTANBUL SABAHATTİN ZAİM ÜNİVERSİTESİ",
+     84.9092
+    ],
+    [
+     "DEMİROĞLU BİLİM ÜNİVERSİTESİ",
+     79.5238
+    ],
+    [
+     "İSTANBUL KÜLTÜR ÜNİVERSİTESİ",
+     74.9731
+    ],
+    [
+     "ÜSKÜDAR ÜNİVERSİTESİ",
+     74.7209
+    ],
+    [
+     "HALİÇ ÜNİVERSİTESİ",
+     65.3061
+    ]
+   ]
   }
  ]
 }

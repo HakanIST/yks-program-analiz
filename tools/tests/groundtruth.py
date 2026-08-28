@@ -49,6 +49,13 @@ DURUMLAR = [
      "bolge": {"tip": "TR"}, "tur": {"tip": "GRUP", "deger": "vakif"}, "olcut": "doluluk"},
     {"ad": "Bilgisayar Mühendisliği · devlet · puan", "program": "Bilgisayar Mühendisliği",
      "bolge": {"tip": "TR"}, "tur": {"tip": "GRUP", "deger": "devlet"}, "olcut": "puan"},
+    # Dil bazında ayrım: Türkçe ve İngilizce bölümler ayrı bölüm olarak raporlanır (#1)
+    {"ad": "Moleküler Biyoloji ve Genetik · İstanbul vakıf · doluluk · İngilizce",
+     "program": "Moleküler Biyoloji ve Genetik", "dil": "İngilizce",
+     "bolge": {"tip": "IST"}, "tur": {"tip": "GRUP", "deger": "vakif"}, "olcut": "doluluk"},
+    {"ad": "Moleküler Biyoloji ve Genetik · İstanbul vakıf · doluluk · Türkçe",
+     "program": "Moleküler Biyoloji ve Genetik", "dil": "Türkçe",
+     "bolge": {"tip": "IST"}, "tur": {"tip": "GRUP", "deger": "vakif"}, "olcut": "doluluk"},
 ]
 
 
@@ -58,7 +65,9 @@ def veriyi_hazirla(girdi: Path) -> pd.DataFrame:
     df["uni_ad"] = [uni.kisa_ad for uni in ayristirilmis]
     df["sehir"] = [uni.sehir for uni in ayristirilmis]
     df["yurtici"] = [uni.yurtici for uni in ayristirilmis]
-    df["temel_program"] = [program_ayristir(ad).ad for ad in df["BÖLÜM/PROGRAM ADI"]]
+    ayristirilmis_program = [program_ayristir(ad) for ad in df["BÖLÜM/PROGRAM ADI"]]
+    df["temel_program"] = [program.ad for program in ayristirilmis_program]
+    df["dil"] = [program.dil for program in ayristirilmis_program]
     # Kılavuzlar arası adlandırma farkları (bkz. normalize.kanonik_program_haritasi);
     # test edilen şey sıralama hesabı olduğu için normalleştirme ortak kullanılır.
     sayac = Counter(df["temel_program"])
@@ -86,6 +95,8 @@ def kapsama_uygula(df: pd.DataFrame, bolge: dict, tur: dict) -> pd.DataFrame:
 
 def durum_hesapla(df: pd.DataFrame, durum: dict) -> dict:
     secili = df[df["temel_program"] == durum["program"]]
+    if durum.get("dil"):
+        secili = secili[secili["dil"] == durum["dil"]]
     secili = kapsama_uygula(secili, durum["bolge"], durum["tur"])
 
     yillik = secili.groupby(["uni_ad", "YIL"]).agg(
@@ -111,7 +122,7 @@ def durum_hesapla(df: pd.DataFrame, durum: dict) -> dict:
         for satir in ozet.head(10).itertuples()
     ]
     return {
-        **{anahtar: durum[anahtar] for anahtar in ("ad", "program", "bolge", "tur", "olcut")},
+        **{anahtar: durum[anahtar] for anahtar in ("ad", "program", "bolge", "tur", "olcut", "dil") if anahtar in durum},
         "ozet": {
             "universite": int(secili["uni_ad"].nunique()),
             "kontenjan": int(secili["KONTENJAN"].sum()),

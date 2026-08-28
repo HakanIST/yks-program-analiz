@@ -67,11 +67,18 @@ export async function veriYukle(kokDizin = "data") {
   const kova = new Int32Array(n);
   for (let i = 0; i < n; i++) kova[kovaYazma[sutun.p[i]]++] = i;
 
+  // Program -> öğretim dili kümesi. Aynı temel program Türkçe ve İngilizce
+  // olarak iki ayrı bölüm hâlinde yürütülebilir (ör. Moleküler Biyoloji ve
+  // Genetik); arayüz bu bilgiyle dil varyantlarını ayrı seçenek olarak sunar.
+  const programDilleri = Array.from({ length: programSayisi }, () => new Set());
+  for (let i = 0; i < n; i++) programDilleri[sutun.p[i]].add(sutun.d[i]);
+
   const programlar = meta.programlar.map((program, indeks) => ({
     indeks,
     ad: program.n,
     seviyeler: program.l,
     kayit: adet[indeks],
+    diller: [...programDilleri[indeks]].sort((a, b) => a - b),
     anahtar: aramaAnahtari(program.n),
   }));
   const programSirali = [...programlar].sort((a, b) => trSirala(a.ad, b.ad));
@@ -107,16 +114,28 @@ export async function veriYukle(kokDizin = "data") {
     universiteler,
     universiteSirali,
     sehirSirali,
-    /** Bir üniversitenin (hiç açtığı) programlarının indeks kümesi. */
+    /**
+     * Bir üniversitenin (hiç açtığı) programları: program indeksi -> o programda
+     * sunduğu öğretim dillerinin kümesi. `has`/`size` ile küme gibi de kullanılır.
+     */
     universiteProgramlari(uniIndeks) {
       if (uniIndeks == null) return null;
-      let kume = uniProgramOnbellek.get(uniIndeks);
-      if (!kume) {
-        kume = new Set();
-        for (let i = 0; i < n; i++) if (sutun.u[i] === uniIndeks) kume.add(sutun.p[i]);
-        uniProgramOnbellek.set(uniIndeks, kume);
+      let harita = uniProgramOnbellek.get(uniIndeks);
+      if (!harita) {
+        harita = new Map();
+        for (let i = 0; i < n; i++) {
+          if (sutun.u[i] !== uniIndeks) continue;
+          let diller = harita.get(sutun.p[i]);
+          if (!diller) harita.set(sutun.p[i], (diller = new Set()));
+          diller.add(sutun.d[i]);
+        }
+        uniProgramOnbellek.set(uniIndeks, harita);
       }
-      return kume;
+      return harita;
+    },
+    /** Dil indeksinden okunaklı ad. */
+    dilAdi(dilIndeks) {
+      return meta.diller[dilIndeks];
     },
     /** Bir programın kayıt indekslerini verir. */
     programKayitlari(programIndeks) {

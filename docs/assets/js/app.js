@@ -7,7 +7,7 @@
 
 import { AYAR } from "./config.js";
 import { veriYukle, TUR_ETIKETI } from "./data.js";
-import { hesapla, gosterilecekSatirlar, OLCUT } from "./ranking.js";
+import { hesapla, gosterilecekSatirlar, dilKirilimi, OLCUT } from "./ranking.js";
 import { sparkline, cizgiGrafik, SERI_RENKLERI, ipucuGizle } from "./charts.js";
 import { combobox } from "./combobox.js";
 import { sayi, puan, yuzde, kisaSayi, degisim, trSirala, aramaAnahtari } from "./format.js";
@@ -92,11 +92,14 @@ function kontrolleriDoldur() {
     bosMetin: "Program bulunamadı",
     secilince: (kayit) => {
       filtre.program = kayit.indeks;
+      // Listeden "(İngilizce)" gibi bir dil varyantı seçildiyse dil filtresi de
+      // onunla gelir; yalın program adı "tüm diller" anlamındadır.
+      filtre.dil = kayit.dil ?? null;
       seciliUniversite = null;
       yenile();
     },
   });
-  if (filtre.program != null) cbProgram.deger(veri.programAdi(filtre.program));
+  if (filtre.program != null) cbProgram.deger(programBasligi());
 
   const kurumKutusu = $("#secim-kurum-programlari");
   kurumKutusu.checked = sadeceKurumProgramlari;
@@ -203,17 +206,43 @@ function kurumEtiketi() {
   return yapilandirilan && yapilandirilan.indeks === uni.indeks ? AYAR.kurumAdi : uni.ad;
 }
 
-/** Program açılır listesine girecek kayıtlar — istenirse kurumun programlarıyla sınırlı. */
+/** Seçili programın görünen adı; dil filtresi varsa "(İngilizce)" gibi eki ile. */
+function programBasligi() {
+  if (filtre.program == null) return "Tüm programlar";
+  const ad = veri.programAdi(filtre.program);
+  return filtre.dil != null ? `${ad} (${veri.dilAdi(filtre.dil)})` : ad;
+}
+
+/**
+ * Program açılır listesine girecek kayıtlar — istenirse kurumun programlarıyla sınırlı.
+ *
+ * Birden fazla dilde sunulan programlar için yalın ad (tüm diller) ile birlikte
+ * her dil ayrı bir madde olarak listelenir: Türkçe ve İngilizce bölümler ayrı
+ * bölümlerdir ve raporlamada ayrı ayrı istenir. Burs/ücret varyantları ise aynı
+ * bölümün kontenjan türleri olduğu için birleşik kalır.
+ */
 function programSecenekleri() {
   const kurumProgramlari = sadeceKurumProgramlari ? veri.universiteProgramlari(filtre.takip) : null;
-  return veri.programSirali
-    .filter((program) => !kurumProgramlari || kurumProgramlari.has(program.indeks))
-    .map((program) => ({
+  const secenekler = [];
+  for (const program of veri.programSirali) {
+    if (kurumProgramlari && !kurumProgramlari.has(program.indeks)) continue;
+    const cokDilli = program.diller.length > 1;
+    secenekler.push({
       etiket: program.ad,
       anahtar: program.anahtar,
-      aciklama: `${program.kayit} kayıt`,
+      aciklama: cokDilli ? `tüm diller · ${program.kayit} kayıt` : `${program.kayit} kayıt`,
       indeks: program.indeks,
-    }));
+      dil: null,
+    });
+    if (!cokDilli) continue;
+    const kurumDilleri = kurumProgramlari ? kurumProgramlari.get(program.indeks) : null;
+    for (const dil of program.diller) {
+      if (kurumDilleri && !kurumDilleri.has(dil)) continue;
+      const etiket = `${program.ad} (${veri.dilAdi(dil)})`;
+      secenekler.push({ etiket, anahtar: aramaAnahtari(etiket), aciklama: "öğretim dili", indeks: program.indeks, dil });
+    }
+  }
+  return secenekler;
 }
 
 /** Kutucuk ya da takip edilen kurum değiştiğinde listeyi ve etiketini yeniler. */
@@ -296,7 +325,7 @@ function olaylariBagla() {
 
   $("#btn-sifirla").addEventListener("click", () => {
     filtre = varsayilanFiltre();
-    $("#secim-program").value = filtre.program != null ? veri.programAdi(filtre.program) : "";
+    $("#secim-program").value = filtre.program != null ? programBasligi() : "";
     $("#secim-takip").value = filtre.takip != null ? veri.universiteler[filtre.takip].ad : "";
     seciliUniversite = null;
     sadeceKurumProgramlari = AYAR.sadeceKurumProgramlari;
@@ -362,12 +391,67 @@ function kontrolleriGuncelle() {
   rozet.hidden = ekAdet === 0;
   rozet.textContent = ekAdet;
 
+  // Dil filtresi ayrıntılı filtrelerden değiştiğinde program kutusundaki ad da
+  // "(İngilizce)" ekiyle eşleşsin; kullanıcı ne gördüğünü tek bakışta anlasın.
+  if (filtre.program != null && document.activeElement !== $("#secim-program")) {
+    $("#secim-program").value = programBasligi();
+  }
+
   $("#filtre-ozet").textContent = filtreOzeti();
+  dilUyarisiCiz();
+}
+
+/**
+ * Birleşik görünümde birden fazla öğretim dili varsa görünür bir uyarı ve dil
+ * bazına geçiş çipleri; dil filtresi açıkken de geri dönüş çipi gösterir.
+ * Öğretim Dili seçimi kapalı "Ayrıntılı filtreler" bölümünde kaldığı için
+ * kullanıcıların çoğu birleştirmeyi fark etmiyordu.
+ */
+function dilUyarisiCiz() {
+  const kap = $("#dil-uyari");
+  kap.innerHTML = "";
+  const diller = sonSonuc ? sonSonuc.ozet.diller : [];
+  const cokDilli = filtre.program != null && diller.length > 1;
+  if (!cokDilli && filtre.dil == null) {
+    kap.hidden = true;
+    return;
+  }
+  kap.hidden = false;
+
+  const metin = document.createElement("span");
+  const cipler = document.createElement("span");
+  cipler.className = "cip-grup";
+  const cipEkle = (etiket, dil) => {
+    const cip = document.createElement("button");
+    cip.type = "button";
+    cip.className = "cip kucuk";
+    cip.textContent = etiket;
+    cip.setAttribute("aria-pressed", filtre.dil === dil ? "true" : "false");
+    cip.addEventListener("click", () => {
+      filtre.dil = dil;
+      yenile();
+    });
+    cipler.append(cip);
+  };
+
+  if (filtre.dil != null) {
+    metin.textContent = `Yalnızca ${veri.dilAdi(filtre.dil)} öğretim dilindeki programlar gösteriliyor.`;
+    cipEkle("Tüm diller", null);
+    const program = veri.programlar[filtre.program];
+    for (const dil of program ? program.diller : []) cipEkle(veri.dilAdi(dil), dil);
+  } else {
+    const adlar = diller.map((dil) => veri.dilAdi(dil));
+    metin.textContent =
+      `Bu görünümde ${adlar.length} öğretim dili birleştirildi (${adlar.join(", ")}). ` +
+      `Farklı dildeki programlar ayrı bölümlerdir; dil bazında görmek için:`;
+    for (const dil of diller) cipEkle(veri.dilAdi(dil), dil);
+  }
+  kap.append(metin, cipler);
 }
 
 function filtreOzeti() {
   const parcalar = [];
-  parcalar.push(filtre.program != null ? veri.programAdi(filtre.program) : "Tüm programlar");
+  parcalar.push(programBasligi());
   parcalar.push(kapsamAdi());
   parcalar.push(OLCUT[filtre.olcut].ad + " sıralaması");
   const yillar = veri.meta.yillar.filter((_, indeks) => filtre.yillar[indeks]);
@@ -439,7 +523,7 @@ function tabloCiz(sonuc) {
   const yilIndeksleri = veri.meta.yillar.map((_, indeks) => indeks).filter((indeks) => filtre.yillar[indeks]);
   const { ilkler, takip } = gosterilecekSatirlar(sonuc, filtre.takip, AYAR.ilkN);
 
-  $("#tablo-baslik").textContent = `${filtre.program != null ? veri.programAdi(filtre.program) : "Tüm programlar"} — İlk ${AYAR.ilkN}`;
+  $("#tablo-baslik").textContent = `${programBasligi()} — İlk ${AYAR.ilkN}`;
   $("#tablo-aciklama").textContent = `${olcut.aciklama}. ${kapsamAdi()}.`;
 
   const bas = $("#tablo-bas");
@@ -486,11 +570,16 @@ function tabloCiz(sonuc) {
   }
 
   const takipAdi = filtre.takip != null ? veri.universiteler[filtre.takip].ad : null;
+  const dilNotu =
+    filtre.dil != null
+      ? `Yalnızca ${veri.dilAdi(filtre.dil)} öğretim dilindeki programlar dahil edildi; burs/ücret varyantları yıl bazında birleştirildi. `
+      : `Bir üniversitenin aynı programdaki tüm varyantları (burslu, indirimli, ücretli, yabancı dilli) yıl bazında birleştirildi. `;
   $("#tablo-dipnot").textContent =
-    `Bir üniversitenin aynı programdaki tüm varyantları (burslu, indirimli, ücretli, yabancı dilli) yıl bazında birleştirildi: ` +
-    `kontenjan ve yerleşen toplandı, en büyük puan varyantların en yükseği alındı. ` +
+    dilNotu +
+    `Kontenjan ve yerleşen toplandı, en büyük puan varyantların en yükseği alındı. ` +
     `Satır sonundaki mini grafikler kendi içinde ölçeklenir (değişimin şeklini gösterir); üniversiteler arası ölçekli karşılaştırma için alttaki büyük grafiği kullanın. ` +
-    (takipAdi ? `${takipAdi} ilk ${AYAR.ilkN} dışında kalsa da gerçek sırasıyla ayrıca gösterilir.` : "");
+    (takipAdi ? `${takipAdi} ilk ${AYAR.ilkN} dışında kalsa da gerçek sırasıyla ayrıca gösterilir. ` : "") +
+    `Kaynak ÖSYM ilk yerleştirme sonuçlarıdır; ek yerleştirme ve sonradan eklenen ek kontenjanlar dahil değildir, kurum içi tablolarla küçük farklar bundan kaynaklanır.`;
 
   $("#tablo-lejant").innerHTML = "";
   const lejant = document.createElement("span");
@@ -521,6 +610,14 @@ function satirCiz(satir, yilIndeksleri) {
   const alt = document.createElement("div");
   alt.className = "uni-alt";
   alt.textContent = `${sehirBasligi(satir.uni.sehir)} · ${TUR_ETIKETI[satir.uni.tur] ?? satir.uni.tur}`;
+  if (satir.diller.length > 1) {
+    // Bu satır birden fazla dildeki (ayrı) bölümün toplamı; okuyucu bunu görsün.
+    const dilRozet = document.createElement("span");
+    dilRozet.className = "dil-rozet";
+    dilRozet.textContent = satir.diller.map((dil) => veri.dilAdi(dil)).join(" + ");
+    dilRozet.title = "Bu satır birden fazla öğretim dilindeki programın toplamıdır; kırılım için satıra tıklayın.";
+    alt.append(" · ", dilRozet);
+  }
   uniHucre.append(ad, alt);
   tr.append(uniHucre);
 
@@ -700,6 +797,8 @@ function detayCiz() {
     `<strong>dönem değişimi:</strong> <span class="yon ${fark > 0 ? "artis" : fark < 0 ? "azalis" : ""}">${degisim(fark)}</span>`;
   kap.append(ozetSatir);
 
+  if (hedef.diller.length > 1) kap.append(dilKirilimiCiz(hedef, yilIndeksleri));
+
   const varyantlar = [
     ...new Set(
       yilIndeksleri
@@ -717,6 +816,101 @@ function detayCiz() {
   }
 
   panel.append(kap);
+}
+
+/**
+ * Detay panelinde öğretim diline göre kırılım tablosu. Türkçe ve İngilizce
+ * bölümler ayrı bölüm olduğundan raporlarda ayrı ayrı istenir; birleşik satır
+ * bu tabloyla tek ekranda dil bazında okunur.
+ */
+function dilKirilimiCiz(hedef, yilIndeksleri) {
+  const kirilim = dilKirilimi(veri, hedef);
+  const kutu = document.createElement("div");
+  kutu.className = "detay-kirilim";
+
+  const baslik = document.createElement("div");
+  baslik.className = "detay-kirilim-baslik";
+  baslik.innerHTML = `<strong>Öğretim diline göre kırılım</strong>`;
+  const not = document.createElement("span");
+  not.textContent = "Farklı dildeki programlar ayrı bölümlerdir.";
+  baslik.append(not);
+  kutu.append(baslik);
+
+  const tablo = document.createElement("table");
+  tablo.className = "detay-tablo";
+  const bas = document.createElement("thead");
+  const basSatir = document.createElement("tr");
+  basSatir.append(hucre("th", "Yıl"));
+  for (const dil of kirilim) {
+    const th = hucre("th", dil.ad);
+    th.colSpan = 3;
+    th.className = "grup";
+    basSatir.append(th);
+  }
+  const altBas = document.createElement("tr");
+  altBas.append(hucre("th", ""));
+  for (let sira = 0; sira < kirilim.length; sira++) {
+    altBas.append(hucre("th", "Kont."), hucre("th", "Yerl."), hucre("th", filtre.olcut === "doluluk" ? "Doluluk" : "En büyük"));
+  }
+  bas.append(basSatir, altBas);
+  tablo.append(bas);
+
+  const govde = document.createElement("tbody");
+  for (const yilIndeksi of yilIndeksleri) {
+    const tr = document.createElement("tr");
+    tr.append(hucre("td", String(veri.meta.yillar[yilIndeksi])));
+    for (const dil of kirilim) {
+      const h = dil.yillik[yilIndeksi];
+      if (!h) {
+        const bos = hucre("td", "—");
+        bos.colSpan = 3;
+        bos.className = "bos-veri";
+        bos.style.textAlign = "center";
+        tr.append(bos);
+        continue;
+      }
+      tr.append(
+        hucre("td", sayi(h.kontenjan)),
+        hucre("td", sayi(h.yerlesen)),
+        hucre("td", filtre.olcut === "doluluk" ? yuzde(h.doluluk) : puan(h.enBuyuk))
+      );
+    }
+    govde.append(tr);
+  }
+  // Dönem özeti: kontenjan/yerleşen toplamı, ölçütün ortalaması (ana tabloyla aynı kural)
+  const ozet = document.createElement("tr");
+  ozet.className = "ozet";
+  ozet.append(hucre("td", "Dönem"));
+  for (const dil of kirilim) {
+    ozet.append(
+      hucre("td", sayi(dil.toplamKontenjan)),
+      hucre("td", sayi(dil.toplamYerlesen)),
+      hucre("td", filtre.olcut === "doluluk" ? yuzde(dil.ortDoluluk) : puan(dil.ortPuan))
+    );
+  }
+  govde.append(ozet);
+  tablo.append(govde);
+  const kaydir = document.createElement("div");
+  kaydir.className = "tablo-kaydir";
+  kaydir.append(tablo);
+  kutu.append(kaydir);
+
+  const cipler = document.createElement("div");
+  cipler.className = "cip-grup";
+  for (const dil of kirilim) {
+    const cip = document.createElement("button");
+    cip.type = "button";
+    cip.className = "cip kucuk";
+    cip.textContent = `Yalnızca ${dil.ad}`;
+    cip.title = `Sıralamayı yalnızca ${dil.ad} programlarla yeniden hesapla`;
+    cip.addEventListener("click", () => {
+      filtre.dil = dil.dil;
+      yenile();
+    });
+    cipler.append(cip);
+  }
+  kutu.append(cipler);
+  return kutu;
 }
 
 /* --------------------------------------------------------- karşılaştırma */
@@ -780,7 +974,7 @@ function csvIndir() {
   const yilIndeksleri = veri.meta.yillar.map((_, indeks) => indeks).filter((indeks) => filtre.yillar[indeks]);
   const { ilkler, takip } = gosterilecekSatirlar(sonSonuc, filtre.takip, AYAR.ilkN);
   const basliklar = [
-    "Sıra", "Üniversite", "Şehir", "Tür",
+    "Sıra", "Üniversite", "Şehir", "Tür", "Öğretim dili",
     ...yilIndeksleri.map((indeks) => String(veri.meta.yillar[indeks])),
     "Ortalama", "Toplam kontenjan", "Toplam yerleşen", "Genel doluluk %",
   ];
@@ -789,6 +983,8 @@ function csvIndir() {
     satir.uni.ad,
     satir.uni.sehir,
     TUR_ETIKETI[satir.uni.tur] ?? satir.uni.tur,
+    // Birleşik görünümde satırın hangi dilleri kapsadığı; dil filtresi açıkken tek dil.
+    satir.diller.map((dil) => veri.dilAdi(dil)).join(" + "),
     ...yilIndeksleri.map((yilIndeksi) => sayiCsv(metrikDegeri(satir, yilIndeksi))),
     sayiCsv(metrikOrtalamasi(satir)),
     satir.toplamKontenjan,
@@ -797,7 +993,7 @@ function csvIndir() {
   ]);
 
   const ustBilgi = [
-    [`YKS Program Analiz — ${filtre.program != null ? veri.programAdi(filtre.program) : "Tüm programlar"}`],
+    [`YKS Program Analiz — ${programBasligi()}`],
     [filtreOzeti()],
     [],
   ];
@@ -808,7 +1004,7 @@ function csvIndir() {
   const dosya = new Blob(["﻿" + icerik], { type: "text/csv;charset=utf-8" });
   const baglanti = document.createElement("a");
   baglanti.href = URL.createObjectURL(dosya);
-  baglanti.download = `yks-${aramaAnahtari(filtre.program != null ? veri.programAdi(filtre.program) : "tum-programlar").replace(/ /g, "-")}-${filtre.olcut}.csv`;
+  baglanti.download = `yks-${aramaAnahtari(programBasligi()).replace(/ /g, "-")}-${filtre.olcut}.csv`;
   baglanti.click();
   URL.revokeObjectURL(baglanti.href);
   bildir("CSV indirildi");
@@ -876,7 +1072,7 @@ function urldenOku() {
     if (!filtre.yillar.some(Boolean)) filtre.yillar.fill(1);
   }
   const programGirdi = $("#secim-program");
-  if (programGirdi) programGirdi.value = filtre.program != null ? veri.programAdi(filtre.program) : "";
+  if (programGirdi) programGirdi.value = filtre.program != null ? programBasligi() : "";
   const takipGirdi = $("#secim-takip");
   if (takipGirdi) takipGirdi.value = filtre.takip != null ? veri.universiteler[filtre.takip].ad : "";
 }
