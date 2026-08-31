@@ -220,7 +220,7 @@ test("çok dilli program dil listesini taşıyor (MBG: Türkçe + İngilizce)", 
   assert.ok(program.diller.includes(dilIndeksi("Türkçe")), "Türkçe yok");
   assert.ok(program.diller.includes(dilIndeksi("İngilizce")), "İngilizce yok");
   const kurum = veri.universiteProgramlari(uniIndeksi("ÜSKÜDAR ÜNİVERSİTESİ"));
-  assert.deepEqual([...kurum.get(mbg())].sort(), [dilIndeksi("Türkçe"), dilIndeksi("İngilizce")].sort());
+  assert.deepEqual([...kurum.get(mbg()).diller].sort(), [dilIndeksi("Türkçe"), dilIndeksi("İngilizce")].sort());
 });
 
 test("birleşik görünümde özet ve satır birden fazla dil bildiriyor", () => {
@@ -328,6 +328,57 @@ test("kurum tablosu: kurum kapsam dışındaysa satır yok, üniversite seçilme
   assert.equal(devlet.satirlar.length, 0);
   assert.equal(devlet.toplam.kontenjan, 0);
   assert.equal(kurumTablosu(veri, filtreKur(), null).satirlar.length, 0);
+});
+
+/* --------------------------------- kurum görünümü: seviye ayrımı ve kümeler */
+
+test("aynı ad lisans + ön lisans ise satırlar seviyeye göre ayrılıyor", () => {
+  const uskudar = uniIndeksi("ÜSKÜDAR ÜNİVERSİTESİ");
+  const sonuc = kurumTablosu(veri, filtreKur({ ...istVakif, olcut: "doluluk", takip: uskudar }), uskudar);
+  const etiketler = sonuc.satirlar.map((s) => s.etiket);
+  for (const ad of ["Çocuk Gelişimi", "İş Sağlığı ve Güvenliği"]) {
+    assert.ok(etiketler.includes(ad), `${ad} (lisans) satırı yok`);
+    assert.ok(etiketler.includes(`${ad} (Ön Lisans)`), `${ad} (Ön Lisans) satırı yok`);
+  }
+  const lisans = sonuc.satirlar.find((s) => s.etiket === "Çocuk Gelişimi");
+  const onLisans = sonuc.satirlar.find((s) => s.etiket === "Çocuk Gelişimi (Ön Lisans)");
+  const lisansIndeksi = veri.meta.seviyeler.indexOf("LİSANS");
+  const onLisansIndeksi = veri.meta.seviyeler.indexOf("ÖN LİSANS");
+  assert.equal(lisans.seviye, lisansIndeksi);
+  assert.equal(onLisans.seviye, onLisansIndeksi);
+  // Ayrı satırlar dil filtreli hesapla ile aynı mantıkla seviye filtreli hesapla'ya eşit
+  for (const [satir, seviye] of [[lisans, lisansIndeksi], [onLisans, onLisansIndeksi]]) {
+    const ayri = hesapla(veri, filtreKur({ ...istVakif, program: satir.program, seviye }));
+    const beklenen = ayri.satirlar.find((s) => s.uni.indeks === uskudar);
+    assert.equal(satir.satir.toplamKontenjan, beklenen.toplamKontenjan);
+    assert.equal(satir.satir.toplamYerlesen, beklenen.toplamYerlesen);
+  }
+  // Tek seviyeli programlarda ek yok
+  assert.ok(!etiketler.some((etiket) => etiket.includes("Anestezi (")), "tek seviyeli programda ek olmamalı");
+});
+
+test("config.js fakulteler haritası kurum satırlarını tam ve tekil kapsıyor", async () => {
+  const { AYAR } = await import(path.join(kok, "docs/assets/js/config.js"));
+  const { aramaAnahtari } = await import(path.join(kok, "docs/assets/js/format.js"));
+  const uskudar = veri.universiteAra(AYAR.vurgulananUniversite);
+  if (!uskudar || !AYAR.fakulteler) return; // panel başka kuruma uyarlanmışsa bu test anlamsız
+  const sonuc = kurumTablosu(
+    veri,
+    filtreKur({ bolge: { tip: "HEPSI" }, tur: { tip: "HEPSI" }, takip: uskudar.indeks }),
+    uskudar.indeks
+  );
+  const etiketler = new Set(sonuc.satirlar.map((s) => aramaAnahtari(s.etiket)));
+  const atanan = new Set();
+  for (const [birim, liste] of Object.entries(AYAR.fakulteler)) {
+    for (const ad of liste) {
+      const anahtar = aramaAnahtari(ad);
+      assert.ok(etiketler.has(anahtar), `${birim} → "${ad}" hiçbir kurum satırıyla eşleşmiyor`);
+      assert.ok(!atanan.has(anahtar), `"${ad}" birden fazla birime atanmış`);
+      atanan.add(anahtar);
+    }
+  }
+  const kapsanmayan = sonuc.satirlar.filter((s) => !atanan.has(aramaAnahtari(s.etiket))).map((s) => s.etiket);
+  assert.equal(kapsanmayan.length, 0, `birime atanmamış satır: ${kapsanmayan.join(", ")}`);
 });
 
 /* --------------------------------------------- pandas ile çapraz doğrulama */

@@ -238,7 +238,7 @@ export const AYAR = {
 };
 ```
 
-`fakulteler` içindeki adlar kurum görünümündeki satır adlarıyla aynı yazılır (Türkçe program için ek yok, diğer diller parantez içinde); fakülte yapısı ÖSYM verisinde bulunmadığı için kurum kendisi tanımlar.
+`fakulteler` içindeki adlar kurum görünümündeki satır adlarıyla aynı yazılır (Türkçe program için ek yok, diğer diller parantez içinde); fakülte yapısı ÖSYM verisinde bulunmadığı için kurum kendisi tanımlar. Depodaki yapılandırma Üsküdar Üniversitesi'nin 7 birimini tam kapsar (Tıp, Diş Hekimliği, MDBF, İTBF, İletişim, SBF, SHMYO); haritanın satırları tam ve tekil kapsadığı testle doğrulanır. Aynı ad hem lisans hem ön lisans olarak sunuluyorsa (ör. Çocuk Gelişimi) satırlar seviyeye göre ayrılır ve ön lisans satırı `… (Ön Lisans)` eki taşır.
 
 Takip edilen üniversite ayrıca arayüzdeki **Ayrıntılı filtreler → Ayrıca gösterilecek üniversite** alanından da değiştirilebilir; seçim paylaşılabilir bağlantıya işlenir.
 

@@ -115,8 +115,11 @@ export async function veriYukle(kokDizin = "data") {
     universiteSirali,
     sehirSirali,
     /**
-     * Bir üniversitenin (hiç açtığı) programları: program indeksi -> o programda
-     * sunduğu öğretim dillerinin kümesi. `has`/`size` ile küme gibi de kullanılır.
+     * Bir üniversitenin (hiç açtığı) programları: program indeksi ->
+     * { diller: Set, seviyeler: Set }. `has`/`size` ile küme gibi de kullanılır.
+     * Seviye kümesi, aynı adlı lisans ve ön lisans programlarının (ör. Çocuk
+     * Gelişimi: SBF lisans + SHMYO ön lisans) ayrı bölümler olarak ele
+     * alınabilmesi için tutulur.
      */
     universiteProgramlari(uniIndeks) {
       if (uniIndeks == null) return null;
@@ -125,9 +128,10 @@ export async function veriYukle(kokDizin = "data") {
         harita = new Map();
         for (let i = 0; i < n; i++) {
           if (sutun.u[i] !== uniIndeks) continue;
-          let diller = harita.get(sutun.p[i]);
-          if (!diller) harita.set(sutun.p[i], (diller = new Set()));
-          diller.add(sutun.d[i]);
+          let kayit = harita.get(sutun.p[i]);
+          if (!kayit) harita.set(sutun.p[i], (kayit = { diller: new Set(), seviyeler: new Set() }));
+          kayit.diller.add(sutun.d[i]);
+          kayit.seviyeler.add(sutun.l[i]);
         }
         uniProgramOnbellek.set(uniIndeks, harita);
       }
