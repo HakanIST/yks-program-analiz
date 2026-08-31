@@ -296,16 +296,24 @@ export function kurumTablosu(veri, filtre, uniIndeks) {
   const secilenYillar = meta.yillar.map((_, indeks) => indeks).filter((indeks) => filtre.yillar[indeks]);
   const olcut = filtre.olcut === "doluluk" ? "doluluk" : "enBuyuk";
 
-  for (const [programIndeks, kurumDilleri] of harita) {
+  const onLisansIndeksi = meta.seviyeler.indexOf("ÖN LİSANS");
+
+  for (const [programIndeks, kurumKaydi] of harita) {
     const program = veri.programlar[programIndeks];
     // Ülke genelinde tek dilli program: dil boyutu anlamsız, filtre uygulanmaz.
-    const diller = program.diller.length > 1 ? [...kurumDilleri].sort((a, b) => a - b) : [null];
+    const diller = program.diller.length > 1 ? [...kurumKaydi.diller].sort((a, b) => a - b) : [null];
+    // Aynı ad hem lisans hem ön lisans olarak sunuluyorsa bunlar ayrı birimlerin
+    // ayrı bölümleridir (ör. Çocuk Gelişimi: SBF lisans + SHMYO ön lisans);
+    // satırlar seviyeye göre de ayrılır ve ön lisans satırı etiketinde belirtilir.
+    const seviyeler = kurumKaydi.seviyeler.size > 1 ? [...kurumKaydi.seviyeler].sort((a, b) => a - b) : [null];
     for (const dil of diller) {
-      const sonuc = hesapla(veri, { ...filtre, program: programIndeks, dil });
+    for (const seviye of seviyeler) {
+      const sonuc = hesapla(veri, { ...filtre, program: programIndeks, dil, seviye: seviye ?? filtre.seviye });
       const satir = sonuc.satirlar.find((aday) => aday.uni.indeks === uniIndeks);
       if (!satir) continue; // kurum seçili kapsam/yıl/ek filtrelerin dışında
       const dilAdi = dil == null ? null : meta.diller[dil];
-      const etiket = dilAdi && dilAdi !== "Türkçe" ? `${program.ad} (${dilAdi})` : program.ad;
+      let etiket = dilAdi && dilAdi !== "Türkçe" ? `${program.ad} (${dilAdi})` : program.ad;
+      if (seviye != null && seviye === onLisansIndeksi) etiket += " (Ön Lisans)";
 
       // Son iki seçili yılın farkı (sunumlardaki "son 2 yıl fark" sütunu)
       const degerler = secilenYillar.map((yil) => satir.yillik[yil]?.[olcut] ?? null);
@@ -316,12 +324,14 @@ export function kurumTablosu(veri, filtre, uniIndeks) {
       satirlar.push({
         program: programIndeks,
         dil,
+        seviye,
         etiket,
         satir,
         sira: satir.sira,
         siralanan: sonuc.ozet.siralanan,
         sonFark,
       });
+    }
     }
   }
 

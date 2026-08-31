@@ -243,7 +243,7 @@ function programSecenekleri() {
       dil: null,
     });
     if (!cokDilli) continue;
-    const kurumDilleri = kurumProgramlari ? kurumProgramlari.get(program.indeks) : null;
+    const kurumDilleri = kurumProgramlari ? kurumProgramlari.get(program.indeks).diller : null;
     for (const dil of program.diller) {
       if (kurumDilleri && !kurumDilleri.has(dil)) continue;
       const etiket = `${program.ad} (${veri.dilAdi(dil)})`;
@@ -1314,11 +1314,12 @@ function kurumSatiri(satir, yilIndeksleri) {
   );
   tr.append(grafikHucre);
 
-  // Satır → o programın üniversite karşılaştırması (dil filtresi satırla gelir)
+  // Satır → o programın üniversite karşılaştırması (dil/seviye filtresi satırla gelir)
   tr.addEventListener("click", () => {
     filtre.gorunum = "program";
     filtre.program = satir.program;
     filtre.dil = satir.dil;
+    if (satir.seviye != null) filtre.seviye = satir.seviye;
     seciliUniversite = filtre.takip;
     $("#secim-program").value = programBasligi();
     yenile();

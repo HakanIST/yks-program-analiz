@@ -2,6 +2,15 @@
 
 Bu proje [Semantik Sürümleme](https://semver.org/lang/tr/) kullanır.
 
+## [1.3.0] — 2026-08-31
+
+Kurum görünümünde Üsküdar Üniversitesi'nin tüm birimleri (#3 devamı).
+
+### Eklendi
+- `config.js` → `fakulteler` haritası üniversitenin 7 birimini tam kapsar: Tıp (2), Diş Hekimliği (2), MDBF (10), İTBF (9), İletişim (8), SBF (13), SHMYO (39) — kaynak: uskudar.edu.tr/aday/bolumler. Her birim kurum görünümünde hazır çip.
+- Aynı ad hem lisans hem ön lisans olarak sunuluyorsa (Çocuk Gelişimi, İş Sağlığı ve Güvenliği: SBF + SHMYO) kurum görünümü satırları **seviyeye göre ayrılır**; ön lisans satırı `… (Ön Lisans)` etiketi taşır, sırası kendi seviyesi içinde hesaplanır, satıra tıklanınca seviye filtresi de uygulanır. Üsküdar satır sayısı 81 → 83.
+- Test: `fakulteler` haritasının kurum satırlarını tam ve tekil kapsadığı, seviye ayrımının seviye filtreli hesapla ile tutarlı olduğu doğrulanır (33 test).
+
 ## [1.2.0] — 2026-08-28
 
 Kurum görünümü: bir üniversitenin tüm programlarının yıllara göre tablosu (#3).
