@@ -2,6 +2,18 @@
 
 Bu proje [Semantik Sürümleme](https://semver.org/lang/tr/) kullanır.
 
+## [1.5.0] — 2026-09-08
+
+Yıl bazında kapsam sırası (#8).
+
+### Eklendi
+- Sıralama motoru her seçili yıl için ayrı sıra üretir: o yıl ölçüt değeri olan üniversiteler yıl değerine göre azalan, eşitlikte o yılki kontenjan, o da eşitse üniversite adı. Satırda `yillikSira[]`, özette `yillikSiralanan[]` (o yıl sıralanan üniversite sayısı); kurum görünümü satırları da bunları taşır.
+- **Yıl hücresi: Değer / Kapsamdaki sıra** çipi (`h=sira`): program karşılaştırma ve kurum görünümünde yıl sütunları `5 / 42` gösterir; mini grafikler, detay grafiği, karşılaştırma ve kurum grafiği sırayı ters eksenle çizer (1. sıra üstte). Toplam satırında sıra tanımsız (`—`).
+- Üniversite detay panelindeki yıl tablosuna **Sıra** sütunu; yıl hücresi başlığına ve grafik nokta ipucuna "… sırası: 5 / 42" satırı.
+- CSV (program ve kurum): yıl başına `YYYY sıra` ve `YYYY sıralanan` sütunları, hücre modundan bağımsız.
+- Grafikler: `tersEksen` ve `enAz` seçenekleri.
+- Testler: yıl sıralarının üç ölçütte de kesintisiz ve tutarlı olduğu, seçili olmayan yılın boş kaldığı, kurum görünümü satırının `hesapla` ile aynı sırayı taşıdığı; pandas çapraz doğrulamasına iki senaryoda yıl başına ilk 5 sıra ve payda (42 test).
+
 ## [1.4.0] — 2026-09-08
 
 Sıralama türüne üçüncü ölçüt: Yerleşen Sayısı (#6).

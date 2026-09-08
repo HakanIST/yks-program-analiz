@@ -335,7 +335,13 @@ tr.ayirac td span {
 .detay-baslik .detay-alt { font-size: 12.5px; color: var(--murekkep-3); margin-top: 3px; }
 .detay-grafik { margin: 14px 0 4px; }
 .detay-tablo { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 6px; }
-.detay-tablo th, .detay-tablo td { padding: 6px 6px; text-align: right; border-bottom: 1px solid var(--cizgi-2); font-variant-numeric: tabular-nums; }
+.detay-tablo th, .detay-tablo td { padding: 6px 5px; text-align: right; border-bottom: 1px solid var(--cizgi-2); font-variant-numeric: tabular-nums; }
+/* Yıl tablosuna eklenen Sıra sütunu (#8) dar panele sığsın: yatay kaydırma, sıra hücresi sıkı */
+#detay-panel .tablo-kaydir { margin-top: 6px; }
+#detay-panel .tablo-kaydir .detay-tablo { margin-top: 0; font-size: 11.5px; }
+#detay-panel .tablo-kaydir .detay-tablo th, #detay-panel .tablo-kaydir .detay-tablo td { padding: 6px 3px; }
+#detay-panel .tablo-kaydir .detay-tablo td { white-space: nowrap; }
+.detay-tablo td.sira-hucre { padding-left: 3px; }
 .detay-tablo th { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--murekkep-3); font-weight: 650; }
 .detay-tablo td:first-child, .detay-tablo th:first-child { text-align: left; }
 .detay-varyant { margin-top: 12px; font-size: 12px; color: var(--murekkep-2); }
@@ -384,6 +390,8 @@ table.kurum-tablo tbody td.yon { font-variant-numeric: tabular-nums; }
   border: 1px solid transparent; border-radius: var(--yuvarlak-kucuk);
 }
 .cip.kucuk { padding: 3px 10px; font-size: 12px; }
+/* Yıl hücresi "Kapsamdaki sıra" modunda: "5 / 42" tek satırda, rakamlar hizalı (#8) */
+.siralama td.sira-hucre, .detay-tablo td.sira-hucre { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .dil-rozet {
   display: inline-block; padding: 0 6px; border-radius: 999px; font-size: 10.5px; font-weight: 650;
   background: var(--vurgu-zemin); color: var(--vurgu); letter-spacing: .02em; white-space: nowrap;

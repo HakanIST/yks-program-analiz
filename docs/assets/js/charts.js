@@ -6,7 +6,8 @@
  *   cizgiGrafik() – eksenli, ızgaralı, çok serili büyük grafik
  *
  * Ortak kural: değer arttıkça çizgi yukarı çıkar (en büyük puan ve doluluk
- * oranında "yukarı" her zaman "daha iyi" demektir). Veri olmayan yıllarda çizgi
+ * oranında "yukarı" her zaman "daha iyi" demektir). Sıra grafiklerinde bu kural
+ * `tersEksen` ile korunur: 1. sıra en yukarıdadır. Veri olmayan yıllarda çizgi
  * sıfıra düşmez, kırılır.
  */
 
@@ -117,7 +118,8 @@ export function sparkline(noktalar, secenekler = {}) {
   const max = secenekler.max ?? Math.max(...degerler);
   const xOlcek = (indeks) =>
     bosluk + (indeks / Math.max(1, noktalar.length - 1)) * (genislik - bosluk * 2);
-  const yOlcek = olcek(min, max, yukseklik - bosluk * 2, true);
+  // tersEksen: küçük değer üstte (sıra grafikleri: 1. sıra en yukarıda)
+  const yOlcek = olcek(min, max, yukseklik - bosluk * 2, !secenekler.tersEksen);
   const y = (deger) => bosluk + yOlcek(deger);
 
   const konumlu = noktalar.map((nokta, indeks) => ({ ...nokta, x: xOlcek(indeks), yy: nokta.deger == null ? null : y(nokta.deger) }));
@@ -177,18 +179,21 @@ export function cizgiGrafik(seriler, secenekler = {}) {
   let min = Math.min(...tumDegerler);
   let max = Math.max(...tumDegerler);
   const pay = (max - min) * 0.12 || Math.abs(max) * 0.05 || 1;
+  const altSinir = secenekler.sifirdanBasla ? Math.min(0, min) : min - pay;
   const { alt, ust, adimlar } = guzelAdimlar(
-    secenekler.sifirdanBasla ? Math.min(0, min) : min - pay,
+    secenekler.enAz != null ? Math.max(altSinir, secenekler.enAz) : altSinir,
     secenekler.enFazla != null ? Math.min(max + pay, secenekler.enFazla) : max + pay,
     5
   );
 
   const x = (indeks) => kenar.sol + (yillar.length <= 1 ? alanG / 2 : (indeks / (yillar.length - 1)) * alanG);
-  const yOlcek = olcek(alt, ust, alanY, true);
+  // tersEksen: küçük değer üstte (sıra grafikleri: 1. sıra en yukarıda)
+  const yOlcek = olcek(alt, ust, alanY, !secenekler.tersEksen);
   const y = (deger) => kenar.ust + yOlcek(deger);
 
   // ızgara + y ekseni
   for (const adim of adimlar) {
+    if (secenekler.enAz != null && adim < secenekler.enAz) continue; // sıra ekseninde "0." çizgisi olmaz
     const yy = y(adim);
     svg.append(el("line", { x1: kenar.sol, x2: kenar.sol + alanG, y1: yy, y2: yy, class: "izgara" }));
     const yazi = el("text", { x: kenar.sol - 9, y: yy + 3.5, class: "eksen-yazi", "text-anchor": "end" });

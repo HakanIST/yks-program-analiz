@@ -207,6 +207,34 @@ export function hesapla(veri, filtre) {
     satir.sira = satir[olcut] == null ? null : ++sira;
   }
 
+  // 5) Yıl bazında sıra (#8): her seçili yıl için, o yıl verisi olan
+  // üniversiteler ölçütün yıl değerine göre azalan; eşitlikte o yılki
+  // kontenjan üstte, o da eşitse üniversite adı. Payda yıldan yıla değişebilir (program o yıl açık
+  // olmayan üniversite sıralanmaz), bu yüzden `yillikSiralanan` da döner.
+  const yilAlani = olcutAlanlari(filtre.olcut).yillik;
+  const yillikSiralanan = new Array(yilSayisi).fill(0);
+  for (const satir of satirlar) {
+    satir.yillikSira = new Array(yilSayisi).fill(null);
+    satir.yillikSiralanan = yillikSiralanan; // paylaşılan dizi; satır tek başına çizilebilsin
+  }
+  for (let yil = 0; yil < yilSayisi; yil++) {
+    if (!secilenYil[yil]) continue;
+    const adaylar = satirlar.filter((satir) => satir.yillik[yil]?.[yilAlani] != null);
+    adaylar.sort((a, b) => {
+      const av = a.yillik[yil][yilAlani];
+      const bv = b.yillik[yil][yilAlani];
+      if (bv !== av) return bv - av;
+      if (b.yillik[yil].kontenjan !== a.yillik[yil].kontenjan) return b.yillik[yil].kontenjan - a.yillik[yil].kontenjan;
+      // Tam eşitlik (aynı değer, aynı kontenjan): ad sırası, böylece sıra belirlenimci
+      // ve pandas çapraz doğrulamasıyla aynı (kod noktası karşılaştırması, yerel ayar yok).
+      return a.uni.ad < b.uni.ad ? -1 : a.uni.ad > b.uni.ad ? 1 : 0;
+    });
+    adaylar.forEach((satir, indeks) => {
+      satir.yillikSira[yil] = indeks + 1;
+    });
+    yillikSiralanan[yil] = adaylar.length;
+  }
+
   return {
     satirlar,
     ozet: {
@@ -219,6 +247,7 @@ export function hesapla(veri, filtre) {
       doluluk: toplamKontenjan ? (toplamYerlesen / toplamKontenjan) * 100 : null,
       kayit: kayitSayisi,
       siralanan: sira,
+      yillikSiralanan,
     },
   };
 }
@@ -309,7 +338,7 @@ export function dilKirilimi(veri, satir) {
  * birden fazla dilde sunuyorsa her dil ayrı satırdır (#1). Ad yazımı ÖSYM
  * kılavuzunu izler: Türkçe için ek yok, diğer diller parantez içinde.
  *
- * Dönüş: { satirlar: [{ program, dil, etiket, satir, sira, siralanan, sonFark }],
+ * Dönüş: { satirlar: [{ program, dil, etiket, satir, sira, siralanan, yillikSira, yillikSiralanan, sonFark }],
  *          toplam: { yillik: [{kontenjan, yerlesen, doluluk}|null], kontenjan, yerlesen, doluluk } }
  */
 export function kurumTablosu(veri, filtre, uniIndeks) {
@@ -354,6 +383,8 @@ export function kurumTablosu(veri, filtre, uniIndeks) {
         satir,
         sira: satir.sira,
         siralanan: sonuc.ozet.siralanan,
+        yillikSira: satir.yillikSira,
+        yillikSiralanan: sonuc.ozet.yillikSiralanan,
         sonFark,
       });
     }

@@ -194,6 +194,56 @@ test("dil kırılımında ortYerlesen dil filtreli hesapla ile aynı", () => {
   }
 });
 
+/* ------------------------------------------------------- yıl bazında sıra */
+
+test("yıl bazında sıra: her yıl 1'den kesintisiz, ölçüt değerine göre azalan, eşitlikte kontenjan", () => {
+  for (const olcut of ["puan", "doluluk", "yerlesen"]) {
+    const sonuc = hesapla(veri, filtreKur({ program: programIndeksi("Psikoloji"), bolge: { tip: "IST" }, tur: { tip: "GRUP", deger: "vakif" }, olcut }));
+    const alan = olcutAlanlari(olcut).yillik;
+    veri.meta.yillar.forEach((_, yil) => {
+      const sirali = sonuc.satirlar
+        .filter((satir) => satir.yillikSira[yil] != null)
+        .sort((a, b) => a.yillikSira[yil] - b.yillikSira[yil]);
+      assert.equal(sirali.length, sonuc.ozet.yillikSiralanan[yil], `${olcut} ${yil} payda`);
+      assert.deepEqual(sirali.map((satir) => satir.yillikSira[yil]), sirali.map((_, i) => i + 1), `${olcut} ${yil} kesintisiz`);
+      for (let i = 1; i < sirali.length; i++) {
+        const onceki = sirali[i - 1].yillik[yil];
+        const simdiki = sirali[i].yillik[yil];
+        assert.ok(
+          onceki[alan] > simdiki[alan] || (onceki[alan] === simdiki[alan] && onceki.kontenjan >= simdiki.kontenjan),
+          `${olcut} ${yil}: ${sirali[i - 1].uni.ad} < ${sirali[i].uni.ad}`
+        );
+      }
+      // O yıl ölçüt değeri olmayan satır sıralanmaz
+      for (const satir of sonuc.satirlar) {
+        const deger = satir.yillik[yil]?.[alan] ?? null;
+        assert.equal(satir.yillikSira[yil] == null, deger == null, `${olcut} ${yil} ${satir.uni.ad}`);
+      }
+    });
+  }
+});
+
+test("yıl bazında sıra seçili olmayan yıllarda boş", () => {
+  const yillar = new Uint8Array(veri.meta.yillar.length).fill(1);
+  yillar[0] = 0;
+  const sonuc = hesapla(veri, filtreKur({ program: programIndeksi("Psikoloji"), yillar }));
+  assert.equal(sonuc.ozet.yillikSiralanan[0], 0);
+  for (const satir of sonuc.satirlar) assert.equal(satir.yillikSira[0], null);
+});
+
+test("kurum görünümü satırındaki yıl sırası hesapla ile aynı", () => {
+  const uskudar = uniIndeksi("ÜSKÜDAR ÜNİVERSİTESİ");
+  const filtre = filtreKur({ bolge: { tip: "IST" }, tur: { tip: "GRUP", deger: "vakif" }, olcut: "yerlesen", takip: uskudar });
+  const sonuc = kurumTablosu(veri, filtre, uskudar);
+  const psikoloji = sonuc.satirlar.find((satir) => satir.etiket === "Psikoloji");
+  assert.ok(psikoloji, "Psikoloji satırı yok");
+  const dogrudan = hesapla(veri, { ...filtre, program: programIndeksi("Psikoloji"), dil: psikoloji.dil });
+  const beklenen = dogrudan.satirlar.find((satir) => satir.uni.indeks === uskudar);
+  assert.deepEqual(psikoloji.yillikSira, beklenen.yillikSira);
+  assert.deepEqual(psikoloji.yillikSiralanan, dogrudan.ozet.yillikSiralanan);
+  assert.ok(psikoloji.yillikSira.some((sira) => sira != null));
+});
+
 test("sıra numaraları 1'den başlayıp kesintisiz artıyor", () => {
   const sonuc = hesapla(veri, filtreKur({ program: programIndeksi("Psikoloji") }));
   const siralar = sonuc.satirlar.map((satir) => satir.sira).filter((sira) => sira != null);
@@ -470,6 +520,17 @@ if (beklenen) {
         durum.ilk10.map(([ad]) => ad),
         "ilk 10 üniversite sırası"
       );
+      if (durum.yilSiralari) {
+        for (const [yil, beklenenYil] of Object.entries(durum.yilSiralari)) {
+          const yilIndeksi = veri.meta.yillar.indexOf(Number(yil));
+          assert.equal(sonuc.ozet.yillikSiralanan[yilIndeksi], beklenenYil.siralanan, `${yil} sıralanan`);
+          const ilk5 = sonuc.satirlar
+            .filter((satir) => satir.yillikSira[yilIndeksi] != null && satir.yillikSira[yilIndeksi] <= 5)
+            .sort((a, b) => a.yillikSira[yilIndeksi] - b.yillikSira[yilIndeksi])
+            .map((satir) => [satir.uni.ad, satir.yillikSira[yilIndeksi]]);
+          assert.deepEqual(ilk5, beklenenYil.ilk5, `${yil} ilk 5 sıra`);
+        }
+      }
       // Ortalamalar kayan nokta toplama sırasından ötürü son basamakta ayrışabilir.
       ilk10.forEach(([ad, deger], indeks) => {
         const fark = Math.abs(deger - durum.ilk10[indeks][1]);

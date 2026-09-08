@@ -44,7 +44,7 @@ DURUMLAR = [
     {"ad": "Psikoloji · İstanbul vakıf · puan", "program": "Psikoloji",
      "bolge": {"tip": "IST"}, "tur": {"tip": "GRUP", "deger": "vakif"}, "olcut": "puan"},
     {"ad": "Psikoloji · Türkiye geneli · doluluk", "program": "Psikoloji",
-     "bolge": {"tip": "TR"}, "tur": {"tip": "YURTICI_HEPSI"}, "olcut": "doluluk"},
+     "bolge": {"tip": "TR"}, "tur": {"tip": "YURTICI_HEPSI"}, "olcut": "doluluk", "yilSirasi": True},
     {"ad": "Hemşirelik · vakıf · doluluk", "program": "Hemşirelik",
      "bolge": {"tip": "TR"}, "tur": {"tip": "GRUP", "deger": "vakif"}, "olcut": "doluluk"},
     {"ad": "Bilgisayar Mühendisliği · devlet · puan", "program": "Bilgisayar Mühendisliği",
@@ -53,7 +53,7 @@ DURUMLAR = [
     {"ad": "Psikoloji · Türkiye geneli · yerleşen", "program": "Psikoloji",
      "bolge": {"tip": "TR"}, "tur": {"tip": "YURTICI_HEPSI"}, "olcut": "yerlesen"},
     {"ad": "Hemşirelik · İstanbul vakıf · yerleşen", "program": "Hemşirelik",
-     "bolge": {"tip": "IST"}, "tur": {"tip": "GRUP", "deger": "vakif"}, "olcut": "yerlesen"},
+     "bolge": {"tip": "IST"}, "tur": {"tip": "GRUP", "deger": "vakif"}, "olcut": "yerlesen", "yilSirasi": True},
     # Dil bazında ayrım: Türkçe ve İngilizce bölümler ayrı bölüm olarak raporlanır (#1)
     {"ad": "Moleküler Biyoloji ve Genetik · İstanbul vakıf · doluluk · İngilizce",
      "program": "Moleküler Biyoloji ve Genetik", "dil": "İngilizce",
@@ -127,6 +127,23 @@ def durum_hesapla(df: pd.DataFrame, durum: dict) -> dict:
         [satir.uni_ad, round(float(getattr(satir, olcut_kolonu)), 4)]
         for satir in ozet.head(10).itertuples()
     ]
+
+    # Yıl bazında kapsam sırası (#8): o yıl verisi olan üniversiteler ölçütün yıl
+    # değerine göre azalan, eşitlikte o yılki kontenjan üstte. Yıl başına ilk 5 + payda.
+    yil_siralari = None
+    if durum.get("yilSirasi"):
+        yil_kolonu = {"doluluk": "doluluk", "yerlesen": "yerlesen"}.get(durum["olcut"], "en_buyuk")
+        yil_siralari = {}
+        for yil, grup in yillik.groupby("YIL"):
+            # Üçüncü anahtar üniversite adı (kod noktası sırası; JS tarafı da yerel ayarsız karşılaştırır)
+            grup = grup.dropna(subset=[yil_kolonu]).sort_values(
+                by=[yil_kolonu, "kontenjan", "uni_ad"], ascending=[False, False, True], kind="mergesort"
+            )
+            yil_siralari[str(int(yil))] = {
+                "siralanan": int(len(grup)),
+                "ilk5": [[satir.uni_ad, sira + 1] for sira, satir in enumerate(grup.head(5).itertuples())],
+            }
+
     return {
         **{anahtar: durum[anahtar] for anahtar in ("ad", "program", "bolge", "tur", "olcut", "dil") if anahtar in durum},
         "ozet": {
@@ -135,6 +152,7 @@ def durum_hesapla(df: pd.DataFrame, durum: dict) -> dict:
             "yerlesen": int(secili["YERLEŞEN"].sum()),
         },
         "ilk10": ilk10,
+        **({"yilSiralari": yil_siralari} if yil_siralari is not None else {}),
     }
 
 

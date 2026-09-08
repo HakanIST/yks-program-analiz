@@ -38,8 +38,9 @@ her üniversitenin yıllık değişimi grafikle izlenir ve takip edilen kurum il
 | **Üniversite kapsamı** | Türkiye geneli, İstanbul, tek tek 81 il, KKTC, yurt dışı; devlet / vakıf / tüm türler. Talep edilen altı hazır kapsam tek tıkla seçilebilir. |
 | **İlk 20 sıralaması** | Seçilen ölçütün 2021–2026 ortalamasına göre yüksekten düşüğe. Yıllık değerler, ortalama, kontenjan ve yerleşen aynı satırda. |
 | **Üç ölçüt** | *En Büyük Puan* (ortalama, azalan), *Doluluk Oranı* ve *Yerleşen Sayısı* (ortalama azalan, **eşitlikte kontenjanı yüksek olan üstte**). |
+| **Yıl bazında kapsam sırası** | *Yıl hücresi: Kapsamdaki sıra* çipi ile yıl sütunları o yılki sırayı gösterir (`5 / 42` = sıra / o yıl sıralanan üniversite); grafikler sırayı ters eksenle çizer (1. sıra üstte). Detay panelindeki yıl tablosunda ve nokta ipucunda her zaman görünür; CSV'de yıl başına sıra ve payda sütunları. |
 | **Yıllık çizgi grafikler** | Her satırın sonunda mini trend grafiği, panelde büyük grafik, altta ilk 7 + takip edilen kurumun karşılaştırma grafiği. Değer arttıkça çizgi yukarı çıkar. |
-| **Nokta detayı** | Grafik noktasının üzerine gelince yıl, puan türü, kontenjan, yerleşen, doluluk, en küçük ve en büyük puan görünür. |
+| **Nokta detayı** | Grafik noktasının üzerine gelince yıl, puan türü, kontenjan, yerleşen, doluluk, en küçük ve en büyük puan ve o yılki kapsam sırası görünür. |
 | **Takip edilen üniversite** | İlk 20 dışındaysa listenin altında, **21. sıra olarak değil, gerçek sırasıyla** gösterilir (ör. `34 | Üsküdar Üniversitesi`). |
 | **Kategori özeti** | Seçili filtrelerdeki üniversite sayısı, program varyantı, toplam kontenjan, toplam yerleşen ve genel doluluk oranı. |
 | **Ayrıntılı filtreler** | Yıl, lisans/ön lisans, puan türü, öğretim dili, ücret/burs türü, öğretim şekli. |
@@ -127,6 +128,7 @@ Bir üniversitenin aynı programda birden çok varyantı olabilir (Burslu + %50 
 - **Yerleşen Sayısı ölçütü:** yıllık yerleşen sayılarının aritmetik ortalaması, **yüksekten düşüğe**; **eşitlikte toplam kontenjanı yüksek olan üst sırada**. Dönem toplamı değil ortalama kullanılır; böylece bazı yıllar açılmamış programlar yıl sayısı yüzünden geride kalmaz.
 - Program bazı yıllar açılmamışsa o yıl ortalamaya katılmaz (sıfır sayılmaz), grafikte çizgi kırılır.
 - Ölçüt için hiç değeri olmayan üniversiteler sıralamaya alınmaz, sıra numarası verilmez.
+- **Yıl bazında sıra:** her seçili yıl için ayrı hesaplanır; o yıl ölçüt değeri olan üniversiteler yıl değerine göre **yüksekten düşüğe**, eşitlikte o yılki kontenjanı yüksek olan üstte, o da eşitse üniversite adı. Payda (`/ 42`) o yıl sıralanan üniversite sayısıdır ve yıldan yıla değişebilir; program o yıl açık değilse hücre boştur.
 
 ### 5. Kapsam tanımları
 
@@ -139,7 +141,7 @@ Bir üniversitenin aynı programda birden çok varyantı olabilir (Burslu + %50 
 
 ### 6. Grafik yönü
 
-Her ölçütte **değer arttıkça çizgi yukarı çıkar**: en büyük puanın yükselmesi de, doluluk oranının ya da yerleşen sayısının artması da grafikte yükseliş olarak görünür.
+Her ölçütte **değer arttıkça çizgi yukarı çıkar**: en büyük puanın yükselmesi de, doluluk oranının ya da yerleşen sayısının artması da grafikte yükseliş olarak görünür. Sıra modunda eksen ters çevrilir, böylece **1. sıra en üstte** kalır ve "yukarı = daha iyi" kuralı korunur.
 
 ---
 
