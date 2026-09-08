@@ -295,6 +295,123 @@
    ]
   },
   {
+   "ad": "Psikoloji · Türkiye geneli · yerleşen",
+   "program": "Psikoloji",
+   "bolge": {
+    "tip": "TR"
+   },
+   "tur": {
+    "tip": "YURTICI_HEPSI"
+   },
+   "olcut": "yerlesen",
+   "ozet": {
+    "universite": 138,
+    "kontenjan": 62184,
+    "yerlesen": 59265
+   },
+   "ilk10": [
+    [
+     "ORTA DOĞU TEKNİK ÜNİVERSİTESİ",
+     169.6667
+    ],
+    [
+     "İSTANBUL MEDİPOL ÜNİVERSİTESİ",
+     163.1667
+    ],
+    [
+     "NİŞANTAŞI ÜNİVERSİTESİ",
+     159.0
+    ],
+    [
+     "HALİÇ ÜNİVERSİTESİ",
+     151.6667
+    ],
+    [
+     "İSTANBUL NİŞANTAŞI ÜNİVERSİTESİ",
+     145.0
+    ],
+    [
+     "ANKARA MEDİPOL ÜNİVERSİTESİ",
+     143.8333
+    ],
+    [
+     "ÜSKÜDAR ÜNİVERSİTESİ",
+     142.0
+    ],
+    [
+     "İSTİNYE ÜNİVERSİTESİ",
+     139.8333
+    ],
+    [
+     "İSTANBUL GELİŞİM ÜNİVERSİTESİ",
+     129.0
+    ],
+    [
+     "ANKARA SOSYAL BİLİMLER ÜNİVERSİTESİ",
+     121.3333
+    ]
+   ]
+  },
+  {
+   "ad": "Hemşirelik · İstanbul vakıf · yerleşen",
+   "program": "Hemşirelik",
+   "bolge": {
+    "tip": "IST"
+   },
+   "tur": {
+    "tip": "GRUP",
+    "deger": "vakif"
+   },
+   "olcut": "yerlesen",
+   "ozet": {
+    "universite": 34,
+    "kontenjan": 17095,
+    "yerlesen": 16452
+   },
+   "ilk10": [
+    [
+     "İSTANBUL MEDİPOL ÜNİVERSİTESİ",
+     223.5
+    ],
+    [
+     "BİRUNİ ÜNİVERSİTESİ",
+     155.1667
+    ],
+    [
+     "ACIBADEM MEHMET ALİ AYDINLAR ÜNİVERSİTESİ",
+     154.3333
+    ],
+    [
+     "İSTANBUL GELİŞİM ÜNİVERSİTESİ",
+     152.3333
+    ],
+    [
+     "HALİÇ ÜNİVERSİTESİ",
+     151.8333
+    ],
+    [
+     "İSTİNYE ÜNİVERSİTESİ",
+     137.6667
+    ],
+    [
+     "DEMİROĞLU BİLİM ÜNİVERSİTESİ",
+     133.8333
+    ],
+    [
+     "İSTANBUL ATLAS ÜNİVERSİTESİ",
+     122.6667
+    ],
+    [
+     "FENERBAHÇE ÜNİVERSİTESİ",
+     116.5
+    ],
+    [
+     "İSTANBUL KENT ÜNİVERSİTESİ",
+     114.0
+    ]
+   ]
+  },
+  {
    "ad": "Moleküler Biyoloji ve Genetik · İstanbul vakıf · doluluk · İngilizce",
    "program": "Moleküler Biyoloji ve Genetik",
    "bolge": {

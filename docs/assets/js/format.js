@@ -3,10 +3,13 @@
 const tamsayiBicim = new Intl.NumberFormat("tr-TR");
 const puanBicim = new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const yuzdeBicim = new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const ortalamaBicim = new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 1 });
 
 export const sayi = (deger) => (deger == null || Number.isNaN(deger) ? "—" : tamsayiBicim.format(deger));
 export const puan = (deger) => (deger == null || Number.isNaN(deger) ? "—" : puanBicim.format(deger));
 export const yuzde = (deger) => (deger == null || Number.isNaN(deger) ? "—" : yuzdeBicim.format(deger) + "%");
+/** Yıllık tam sayıların ortalaması: 502 → "502", 312,5 → "312,5" (yerleşen ölçütü). */
+export const ortalamaSayi = (deger) => (deger == null || Number.isNaN(deger) ? "—" : ortalamaBicim.format(deger));
 
 /** Türkçe alfabetik sıralama için karşılaştırıcı. */
 export const trSirala = new Intl.Collator("tr", { sensitivity: "base", numeric: true }).compare;
