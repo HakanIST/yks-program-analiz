@@ -7,10 +7,10 @@
 
 import { AYAR } from "./config.js";
 import { veriYukle, TUR_ETIKETI } from "./data.js";
-import { hesapla, gosterilecekSatirlar, dilKirilimi, kurumTablosu, kurumToplami, OLCUT } from "./ranking.js";
+import { hesapla, gosterilecekSatirlar, dilKirilimi, kurumTablosu, kurumToplami, OLCUT, olcutAlanlari } from "./ranking.js";
 import { sparkline, cizgiGrafik, SERI_RENKLERI, ipucuGizle } from "./charts.js";
 import { combobox } from "./combobox.js";
-import { sayi, puan, yuzde, kisaSayi, degisim, trSirala, aramaAnahtari } from "./format.js";
+import { sayi, puan, yuzde, ortalamaSayi, kisaSayi, degisim, trSirala, aramaAnahtari } from "./format.js";
 
 const $ = (secici) => document.querySelector(secici);
 
@@ -553,15 +553,33 @@ function kpiCiz(sonuc) {
 function metrikDegeri(satir, yilIndeksi) {
   const hucre = satir.yillik[yilIndeksi];
   if (!hucre) return null;
-  return filtre.olcut === "doluluk" ? hucre.doluluk : hucre.enBuyuk;
+  return hucre[olcutAlanlari(filtre.olcut).yillik];
 }
 
 function metrikOrtalamasi(satir) {
-  return filtre.olcut === "doluluk" ? satir.ortDoluluk : satir.ortPuan;
+  return satir[olcutAlanlari(filtre.olcut).ortalama];
 }
 
 function metrikBicim(deger) {
-  return filtre.olcut === "doluluk" ? yuzde(deger) : puan(deger);
+  if (filtre.olcut === "doluluk") return yuzde(deger);
+  if (filtre.olcut === "yerlesen") return ortalamaSayi(deger);
+  return puan(deger);
+}
+
+/** Ölçütün fark gösterimi: puan 2 ondalık, doluluk 1 ondalık + "pp", yerleşen tam sayı. */
+function metrikDegisim(fark) {
+  if (filtre.olcut === "doluluk") return degisim(fark, 1) + (fark == null ? "" : " pp");
+  if (filtre.olcut === "yerlesen") return degisim(fark, 0);
+  return degisim(fark, 2);
+}
+
+/**
+ * Dil kırılımı tablosunda Kont./Yerl. yanındaki üçüncü sütun: ölçütün değeri.
+ * Yerleşen ölçütünde değer zaten Yerl. sütununda olduğu için doluluk gösterilir.
+ */
+function kirilimSutunu(hucreVerisi, ortalamaMi = false) {
+  if (filtre.olcut === "puan") return { baslik: "En büyük", deger: puan(ortalamaMi ? hucreVerisi.ortPuan : hucreVerisi.enBuyuk) };
+  return { baslik: "Doluluk", deger: yuzde(ortalamaMi ? hucreVerisi.ortDoluluk : hucreVerisi.doluluk) };
 }
 
 function tabloCiz(sonuc) {
@@ -840,7 +858,7 @@ function detayCiz() {
   const fark = ilkDeger != null && sonDeger != null ? sonDeger - ilkDeger : null;
   ozetSatir.innerHTML =
     `<strong>Ortalama ${OLCUT[filtre.olcut].kisa.toLocaleLowerCase("tr")}:</strong> ${metrikBicim(metrikOrtalamasi(hedef))} · ` +
-    `<strong>dönem değişimi:</strong> <span class="yon ${fark > 0 ? "artis" : fark < 0 ? "azalis" : ""}">${degisim(fark)}</span>`;
+    `<strong>dönem değişimi:</strong> <span class="yon ${fark > 0 ? "artis" : fark < 0 ? "azalis" : ""}">${metrikDegisim(fark)}</span>`;
   kap.append(ozetSatir);
 
   if (hedef.diller.length > 1) kap.append(dilKirilimiCiz(hedef, yilIndeksleri));
@@ -896,7 +914,7 @@ function dilKirilimiCiz(hedef, yilIndeksleri) {
   const altBas = document.createElement("tr");
   altBas.append(hucre("th", ""));
   for (let sira = 0; sira < kirilim.length; sira++) {
-    altBas.append(hucre("th", "Kont."), hucre("th", "Yerl."), hucre("th", filtre.olcut === "doluluk" ? "Doluluk" : "En büyük"));
+    altBas.append(hucre("th", "Kont."), hucre("th", "Yerl."), hucre("th", kirilimSutunu({}).baslik));
   }
   bas.append(basSatir, altBas);
   tablo.append(bas);
@@ -918,7 +936,7 @@ function dilKirilimiCiz(hedef, yilIndeksleri) {
       tr.append(
         hucre("td", sayi(h.kontenjan)),
         hucre("td", sayi(h.yerlesen)),
-        hucre("td", filtre.olcut === "doluluk" ? yuzde(h.doluluk) : puan(h.enBuyuk))
+        hucre("td", kirilimSutunu(h).deger)
       );
     }
     govde.append(tr);
@@ -931,7 +949,7 @@ function dilKirilimiCiz(hedef, yilIndeksleri) {
     ozet.append(
       hucre("td", sayi(dil.toplamKontenjan)),
       hucre("td", sayi(dil.toplamYerlesen)),
-      hucre("td", filtre.olcut === "doluluk" ? yuzde(dil.ortDoluluk) : puan(dil.ortPuan))
+      hucre("td", kirilimSutunu(dil, true).deger)
     );
   }
   govde.append(ozet);
@@ -1099,6 +1117,29 @@ function esikAltiMi(deger) {
   return filtre.olcut === "doluluk" && deger != null && deger < filtre.esik;
 }
 
+/**
+ * Toplam satırının yıl değeri: doluluk için kümenin toplam yerleşen / toplam
+ * kontenjanı, yerleşen için kümenin o yılki toplam yerleşeni. En büyük puanın
+ * kurum toplamı anlamsızdır (null).
+ */
+function toplamMetrik(toplam, yilIndeksi) {
+  const t = toplam.yillik[yilIndeksi];
+  if (!t) return null;
+  if (filtre.olcut === "doluluk") return t.doluluk;
+  if (filtre.olcut === "yerlesen") return t.yerlesen;
+  return null;
+}
+
+/** Toplam satırının dönem değeri: doluluk için dönem geneli oran, yerleşen için yıllık toplamların ortalaması. */
+function toplamOrtalamasi(toplam, yilIndeksleri) {
+  if (filtre.olcut === "doluluk") return toplam.doluluk;
+  if (filtre.olcut === "yerlesen") {
+    const degerler = yilIndeksleri.map((yil) => toplam.yillik[yil]?.yerlesen).filter((deger) => deger != null);
+    return degerler.length ? degerler.reduce((a, b) => a + b, 0) / degerler.length : null;
+  }
+  return null;
+}
+
 function kurumCiz(sonuc) {
   const kurum = kurumEtiketi();
   const yilIndeksleri = veri.meta.yillar.map((_, indeks) => indeks).filter((indeks) => filtre.yillar[indeks]);
@@ -1205,14 +1246,14 @@ function kurumCiz(sonuc) {
     tr.append(hucre("td", "", "sec"), hucre("td", `Toplam (${gorunen.length} program)`, "sol"));
     for (const yilIndeksi of yilIndeksleri) {
       const t = toplam.yillik[yilIndeksi];
-      const deger = filtre.olcut === "doluluk" ? t?.doluluk ?? null : null;
-      const td = hucre("td", deger == null ? (t ? "—" : "—") : yuzde(deger));
+      const deger = toplamMetrik(toplam, yilIndeksi);
+      const td = hucre("td", deger == null ? "—" : metrikBicim(deger));
       if (esikAltiMi(deger)) td.classList.add("esik-alti");
       if (t) td.title = `Kontenjan: ${sayi(t.kontenjan)} · Yerleşen: ${sayi(t.yerlesen)}`;
       tr.append(td);
     }
     tr.append(
-      hucre("td", filtre.olcut === "doluluk" ? yuzde(toplam.doluluk) : "—", "ort"),
+      hucre("td", metrikBicim(toplamOrtalamasi(toplam, yilIndeksleri)), "ort"),
       hucre("td", sayi(toplam.kontenjan)),
       hucre("td", sayi(toplam.yerlesen)),
       hucre("td", "—"),
@@ -1224,7 +1265,7 @@ function kurumCiz(sonuc) {
 
   $("#kurum-dipnot").textContent =
     `Her satır bir bölümdür; öğretim dili farklı olan programlar ayrı satırdır, burs/ücret varyantları yıl bazında birleştirilmiştir. ` +
-    `Toplam satırındaki doluluk, kümedeki programların toplam yerleşen / toplam kontenjan oranıdır (ortalamaların ortalaması değil). ` +
+    `Toplam satırındaki doluluk, kümedeki programların toplam yerleşen / toplam kontenjan oranıdır (ortalamaların ortalaması değil); yerleşen ölçütünde toplam satırı kümenin yıllık toplam yerleşenini gösterir. ` +
     `"Son 2 yıl" seçili son iki yıl arasındaki farktır. ` +
     `Kaynak ÖSYM ilk yerleştirme sonuçlarıdır; ek yerleştirme ve sonradan eklenen ek kontenjanlar dahil değildir.`;
 
@@ -1292,7 +1333,7 @@ function kurumSatiri(satir, yilIndeksleri) {
   tr.append(hucre("td", sayi(satir.satir.toplamKontenjan)));
   tr.append(hucre("td", sayi(satir.satir.toplamYerlesen)));
 
-  const farkHucre = hucre("td", satir.sonFark == null ? "—" : degisim(satir.sonFark, filtre.olcut === "doluluk" ? 1 : 2) + (filtre.olcut === "doluluk" ? " pp" : ""));
+  const farkHucre = hucre("td", metrikDegisim(satir.sonFark));
   farkHucre.className = `yon ${satir.sonFark > 0 ? "artis" : satir.sonFark < 0 ? "azalis" : ""}`;
   tr.append(farkHucre);
 
@@ -1395,8 +1436,8 @@ function kurumCsv() {
   if (gorunen.length > 1) {
     satirlar.push([
       "TOPLAM", "",
-      ...yilIndeksleri.map((yilIndeksi) => sayiCsv(filtre.olcut === "doluluk" ? toplam.yillik[yilIndeksi]?.doluluk ?? null : null)),
-      sayiCsv(filtre.olcut === "doluluk" ? toplam.doluluk : null),
+      ...yilIndeksleri.map((yilIndeksi) => sayiCsv(toplamMetrik(toplam, yilIndeksi))),
+      sayiCsv(toplamOrtalamasi(toplam, yilIndeksleri)),
       toplam.kontenjan, toplam.yerlesen, sayiCsv(toplam.doluluk), "", "", "",
     ]);
   }
@@ -1509,7 +1550,7 @@ function urldenOku() {
         ? { tip: "TUR", deger: Number(tur.split(":")[1]) }
         : { tip: tur };
   }
-  if (parametreler.get("o")) filtre.olcut = parametreler.get("o") === "doluluk" ? "doluluk" : "puan";
+  if (parametreler.get("o")) filtre.olcut = OLCUT[parametreler.get("o")] ? parametreler.get("o") : "puan";
   const sayisal = { s: "seviye", pt: "puanTuru", d: "dil", u: "ucret", og: "ogretim" };
   for (const [anahtar, alan] of Object.entries(sayisal)) {
     const deger = parametreler.get(anahtar);

@@ -49,6 +49,11 @@ DURUMLAR = [
      "bolge": {"tip": "TR"}, "tur": {"tip": "GRUP", "deger": "vakif"}, "olcut": "doluluk"},
     {"ad": "Bilgisayar Mühendisliği · devlet · puan", "program": "Bilgisayar Mühendisliği",
      "bolge": {"tip": "TR"}, "tur": {"tip": "GRUP", "deger": "devlet"}, "olcut": "puan"},
+    # Yerleşen sayısı ölçütü: yıllık toplam yerleşenin ortalaması (#6)
+    {"ad": "Psikoloji · Türkiye geneli · yerleşen", "program": "Psikoloji",
+     "bolge": {"tip": "TR"}, "tur": {"tip": "YURTICI_HEPSI"}, "olcut": "yerlesen"},
+    {"ad": "Hemşirelik · İstanbul vakıf · yerleşen", "program": "Hemşirelik",
+     "bolge": {"tip": "IST"}, "tur": {"tip": "GRUP", "deger": "vakif"}, "olcut": "yerlesen"},
     # Dil bazında ayrım: Türkçe ve İngilizce bölümler ayrı bölüm olarak raporlanır (#1)
     {"ad": "Moleküler Biyoloji ve Genetik · İstanbul vakıf · doluluk · İngilizce",
      "program": "Moleküler Biyoloji ve Genetik", "dil": "İngilizce",
@@ -109,10 +114,11 @@ def durum_hesapla(df: pd.DataFrame, durum: dict) -> dict:
     ozet = yillik.groupby("uni_ad").agg(
         ortPuan=("en_buyuk", "mean"),
         ortDoluluk=("doluluk", "mean"),
+        ortYerlesen=("yerlesen", "mean"),
         toplamKontenjan=("kontenjan", "sum"),
     ).reset_index()
 
-    olcut_kolonu = "ortDoluluk" if durum["olcut"] == "doluluk" else "ortPuan"
+    olcut_kolonu = {"doluluk": "ortDoluluk", "yerlesen": "ortYerlesen"}.get(durum["olcut"], "ortPuan")
     ozet = ozet.sort_values(
         by=[olcut_kolonu, "toplamKontenjan"], ascending=[False, False], kind="mergesort", na_position="last"
     )

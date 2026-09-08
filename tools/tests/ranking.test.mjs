@@ -22,7 +22,7 @@ globalThis.fetch = async (yol) => {
 };
 
 const { veriYukle } = await import(path.join(kok, "docs/assets/js/data.js"));
-const { hesapla, gosterilecekSatirlar, dilKirilimi, kurumTablosu, kurumToplami } = await import(path.join(kok, "docs/assets/js/ranking.js"));
+const { hesapla, gosterilecekSatirlar, dilKirilimi, kurumTablosu, kurumToplami, olcutAlanlari } = await import(path.join(kok, "docs/assets/js/ranking.js"));
 
 const veri = await veriYukle("data");
 
@@ -135,6 +135,62 @@ test("doluluk sıralamasında eşitlik kontenjanla çözülüyor", () => {
   for (const satir of esitler) {
     const oncekiIndeks = sonuc.satirlar.indexOf(satir) - 1;
     assert.ok(sonuc.satirlar[oncekiIndeks].toplamKontenjan >= satir.toplamKontenjan);
+  }
+});
+
+test("yerleşen sıralaması yıllık yerleşen ortalamasına göre azalan, eşitlikte kontenjan üstte", () => {
+  const sonuc = hesapla(veri, filtreKur({ program: programIndeksi("Psikoloji"), olcut: "yerlesen" }));
+  assert.ok(sonuc.satirlar.length > 1);
+  for (let i = 1; i < sonuc.satirlar.length; i++) {
+    const onceki = sonuc.satirlar[i - 1];
+    const simdiki = sonuc.satirlar[i];
+    assert.ok(
+      onceki.ortYerlesen > simdiki.ortYerlesen ||
+        (onceki.ortYerlesen === simdiki.ortYerlesen && onceki.toplamKontenjan >= simdiki.toplamKontenjan),
+      `sıra bozuk: ${onceki.uni.ad} (${onceki.ortYerlesen}) < ${simdiki.uni.ad} (${simdiki.ortYerlesen})`
+    );
+  }
+  // Sıra numarası ölçüte göre verilmiş olmalı (yerleşeni olan her satır sıralı)
+  assert.equal(sonuc.satirlar[0].sira, 1);
+  assert.equal(sonuc.ozet.siralanan, sonuc.satirlar.filter((satir) => satir.ortYerlesen != null).length);
+});
+
+test("ortYerlesen veri bulunan yılların ortalaması (açılmayan yıl sıfır sayılmaz)", () => {
+  const sonuc = hesapla(veri, filtreKur({ program: programIndeksi("Psikoloji"), olcut: "yerlesen" }));
+  for (const satir of sonuc.satirlar) {
+    const dolu = satir.yillik.filter(Boolean);
+    const beklenen = dolu.reduce((toplam, hucre) => toplam + hucre.yerlesen, 0) / dolu.length;
+    assert.ok(Math.abs(satir.ortYerlesen - beklenen) < 1e-9, satir.uni.ad);
+    assert.equal(dolu.reduce((toplam, hucre) => toplam + hucre.yerlesen, 0), satir.toplamYerlesen);
+  }
+  // En az bir üniversitede eksik yıl varsa ortalama toplam/yıl sayısından farklı olmalı
+  const eksikYilli = sonuc.satirlar.find((satir) => satir.yillik.some((hucre) => !hucre));
+  if (eksikYilli) assert.notEqual(eksikYilli.ortYerlesen, eksikYilli.toplamYerlesen / veri.meta.yillar.length);
+});
+
+test("yerleşen ölçütü kurum görünümünde son 2 yıl farkını yerleşen üzerinden veriyor", () => {
+  const uskudar = uniIndeksi("ÜSKÜDAR ÜNİVERSİTESİ");
+  const istVakif = { bolge: { tip: "IST" }, tur: { tip: "GRUP", deger: "vakif" } };
+  const sonuc = kurumTablosu(veri, filtreKur({ ...istVakif, olcut: "yerlesen", takip: uskudar }), uskudar);
+  assert.ok(sonuc.satirlar.length > 0);
+  const y = veri.meta.yillar.length;
+  for (const satir of sonuc.satirlar) {
+    const son = satir.satir.yillik[y - 1]?.yerlesen ?? null;
+    const onceki = satir.satir.yillik[y - 2]?.yerlesen ?? null;
+    const beklenen = son != null && onceki != null ? son - onceki : null;
+    assert.equal(satir.sonFark, beklenen, satir.etiket);
+  }
+});
+
+test("dil kırılımında ortYerlesen dil filtreli hesapla ile aynı", () => {
+  const program = programIndeksi("Moleküler Biyoloji ve Genetik");
+  const filtre = filtreKur({ program, bolge: { tip: "IST" }, tur: { tip: "GRUP", deger: "vakif" }, olcut: "yerlesen" });
+  const birlesik = hesapla(veri, filtre);
+  const cokDilli = birlesik.satirlar.find((satir) => satir.diller.length > 1);
+  assert.ok(cokDilli, "çok dilli satır bulunamadı");
+  for (const dil of dilKirilimi(veri, cokDilli)) {
+    const ayri = hesapla(veri, { ...filtre, dil: dil.dil }).satirlar.find((satir) => satir.uni.indeks === cokDilli.uni.indeks);
+    assert.ok(Math.abs(dil.ortYerlesen - ayri.ortYerlesen) < 1e-9, `${dil.ad} ortalama yerleşen`);
   }
 });
 
@@ -407,7 +463,7 @@ if (beklenen) {
       assert.equal(sonuc.ozet.universite, durum.ozet.universite, "üniversite sayısı");
       assert.equal(sonuc.ozet.kontenjan, durum.ozet.kontenjan, "toplam kontenjan");
       assert.equal(sonuc.ozet.yerlesen, durum.ozet.yerlesen, "toplam yerleşen");
-      const alan = durum.olcut === "doluluk" ? "ortDoluluk" : "ortPuan";
+      const alan = olcutAlanlari(durum.olcut).ortalama;
       const ilk10 = sonuc.satirlar.slice(0, 10).map((satir) => [satir.uni.ad, satir[alan]]);
       assert.deepEqual(
         ilk10.map(([ad]) => ad),

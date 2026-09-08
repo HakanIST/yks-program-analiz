@@ -10,6 +10,8 @@
  *   en büyük puan        : varyantların en yükseği
  *   en küçük puan        : varyantların en düşüğü
  *   doluluk              : toplam yerleşen / toplam kontenjan
+ * Yerleşen sayısı ölçütü yıllık toplam yerleşenin dönem ortalamasıdır; program
+ * bazı yıllar açılmamışsa o yıl ortalamaya girmez (diğer iki ölçütle aynı kural).
  * Kullanıcı ücret/dil filtreleriyle varyantları daraltarak bunu değiştirebilir.
  */
 
@@ -28,7 +30,24 @@ export const OLCUT = {
     birim: "%",
     aciklama: "2021–2026 doluluk oranı ortalamasına göre yüksekten düşüğe; eşitlikte kontenjanı yüksek olan üstte",
   },
+  yerlesen: {
+    anahtar: "yerlesen",
+    ad: "Yerleşen Sayısı",
+    kisa: "Yerleşen",
+    birim: "kişi",
+    aciklama: "2021–2026 yıllık yerleşen sayısı ortalamasına göre yüksekten düşüğe; eşitlikte kontenjanı yüksek olan üstte",
+  },
 };
+
+/**
+ * Ölçütün satır (dönem ortalaması) ve yıl hücresi alan adları. Tanınmayan ya
+ * da boş ölçüt en büyük puana düşer; URL'den gelen değer de buradan geçer.
+ */
+export function olcutAlanlari(olcut) {
+  if (olcut === "doluluk") return { ortalama: "ortDoluluk", yillik: "doluluk" };
+  if (olcut === "yerlesen") return { ortalama: "ortYerlesen", yillik: "yerlesen" };
+  return { ortalama: "ortPuan", yillik: "enBuyuk" };
+}
 
 /** Üniversite, kapsam (bölge + tür) filtresine uyuyor mu? */
 export function kapsamaUyar(uni, filtre) {
@@ -123,11 +142,13 @@ export function hesapla(veri, filtre) {
     let dolulukAdet = 0;
     let kontenjanToplam = 0;
     let yerlesenToplam = 0;
+    let yerlesenAdet = 0; // veri bulunan yıl sayısı (yerleşen ortalaması için)
     let ilkPuan = null;
     let sonPuan = null;
 
     const yillik = grup.yillik.map((hucre) => {
       if (!hucre) return null;
+      yerlesenAdet++;
       const doluluk = hucre.kontenjan > 0 ? (hucre.yerlesen / hucre.kontenjan) * 100 : null;
       const enBuyuk = hucre.max != null ? hucre.max / carpan : null;
       const enKucuk = hucre.min != null ? hucre.min / carpan : null;
@@ -159,6 +180,7 @@ export function hesapla(veri, filtre) {
       diller: [...grup.diller].sort((a, b) => a - b),
       ortPuan: puanAdet ? puanToplam / puanAdet : null,
       ortDoluluk: dolulukAdet ? dolulukToplam / dolulukAdet : null,
+      ortYerlesen: yerlesenAdet ? yerlesenToplam / yerlesenAdet : null,
       yilAdedi: puanAdet,
       dolulukYilAdedi: dolulukAdet,
       toplamKontenjan: kontenjanToplam,
@@ -169,7 +191,7 @@ export function hesapla(veri, filtre) {
   }
 
   // 4) Sıralama
-  const olcut = filtre.olcut === "doluluk" ? "ortDoluluk" : "ortPuan";
+  const olcut = olcutAlanlari(filtre.olcut).ortalama;
   satirlar.sort((a, b) => {
     const av = a[olcut];
     const bv = b[olcut];
@@ -244,8 +266,10 @@ export function dilKirilimi(veri, satir) {
       let puanAdet = 0;
       let kontenjanToplam = 0;
       let yerlesenToplam = 0;
+      let yerlesenAdet = 0;
       const yillik = gruplar.get(dil).map((ham) => {
         if (!ham) return null;
+        yerlesenAdet++;
         const doluluk = ham.kontenjan > 0 ? (ham.yerlesen / ham.kontenjan) * 100 : null;
         const enBuyuk = ham.max != null ? ham.max / carpan : null;
         const enKucuk = ham.min != null ? ham.min / carpan : null;
@@ -267,6 +291,7 @@ export function dilKirilimi(veri, satir) {
         yillik,
         ortDoluluk: dolulukAdet ? dolulukToplam / dolulukAdet : null,
         ortPuan: puanAdet ? puanToplam / puanAdet : null,
+        ortYerlesen: yerlesenAdet ? yerlesenToplam / yerlesenAdet : null,
         toplamKontenjan: kontenjanToplam,
         toplamYerlesen: yerlesenToplam,
         genelDoluluk: kontenjanToplam ? (yerlesenToplam / kontenjanToplam) * 100 : null,
@@ -294,7 +319,7 @@ export function kurumTablosu(veri, filtre, uniIndeks) {
   if (!harita) return { satirlar, toplam: bosToplam(meta.yillar.length) };
 
   const secilenYillar = meta.yillar.map((_, indeks) => indeks).filter((indeks) => filtre.yillar[indeks]);
-  const olcut = filtre.olcut === "doluluk" ? "doluluk" : "enBuyuk";
+  const olcut = olcutAlanlari(filtre.olcut).yillik;
 
   const onLisansIndeksi = meta.seviyeler.indexOf("ÖN LİSANS");
 

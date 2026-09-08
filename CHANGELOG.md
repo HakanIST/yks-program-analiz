@@ -2,6 +2,18 @@
 
 Bu proje [Semantik Sürümleme](https://semver.org/lang/tr/) kullanır.
 
+## [1.4.0] — 2026-09-08
+
+Sıralama türüne üçüncü ölçüt: Yerleşen Sayısı (#6).
+
+### Eklendi
+- **Yerleşen Sayısı** ölçütü (`o=yerlesen`): üniversitenin veri bulunan yıllardaki yıllık yerleşen sayısının aritmetik ortalaması, yüksekten düşüğe; eşitlikte toplam kontenjanı yüksek olan üstte. Program karşılaştırma tablosu, üniversite detayı, karşılaştırma grafiği, kurum görünümü (son 2 yıl farkı ve toplam satırı dahil), dil kırılımı ve CSV dışa aktarımı yeni ölçütü tanır.
+- Sıralama motoru: satır ve dil kırılımında `ortYerlesen`; ölçüt → alan eşlemesi tek yerde (`olcutAlanlari`). 4 yeni test ve pandas çapraz doğrulamasına iki yerleşen senaryosu (39 test).
+
+### Değiştirildi
+- Bağlantıdaki tanınmayan `o=` değeri eskisi gibi En Büyük Puan'a düşer; ölçüt listesi `OLCUT` tablosundan doğrulanır.
+- Üniversite detay panelindeki "dönem değişimi" ölçütün kendi biçimini kullanır: doluluk için 1 ondalık + `pp` (kurum görünümüyle aynı), yerleşen için tam sayı, puan için 2 ondalık.
+
 ## [1.3.0] — 2026-08-31
 
 Kurum görünümünde Üsküdar Üniversitesi'nin tüm birimleri (#3 devamı).

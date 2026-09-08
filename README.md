@@ -37,7 +37,7 @@ her üniversitenin yıllık değişimi grafikle izlenir ve takip edilen kurum il
 | **Kurum görünümü** | Eksenin tersi: takip edilen üniversitenin **tüm bölümleri** satır satır, yıllara göre doluluk/puan, dönem ortalaması, son iki yıl farkı ve seçili kapsamdaki gerçek sıra (`11 / 16`). Hazır program kümeleri (`config.js` → `fakulteler`, ör. MDBF) ya da kutucukla elle seçim; doluluk eşiği (varsayılan %70) altındaki hücreler vurgulanır; toplam satırı, ≤ 10 programda çizgi grafik, CSV. Satıra tıklayınca o programın karşılaştırmasına geçilir. |
 | **Üniversite kapsamı** | Türkiye geneli, İstanbul, tek tek 81 il, KKTC, yurt dışı; devlet / vakıf / tüm türler. Talep edilen altı hazır kapsam tek tıkla seçilebilir. |
 | **İlk 20 sıralaması** | Seçilen ölçütün 2021–2026 ortalamasına göre yüksekten düşüğe. Yıllık değerler, ortalama, kontenjan ve yerleşen aynı satırda. |
-| **İki ölçüt** | *En Büyük Puan* (ortalama, azalan) ve *Doluluk Oranı* (ortalama azalan, **eşitlikte kontenjanı yüksek olan üstte**). |
+| **Üç ölçüt** | *En Büyük Puan* (ortalama, azalan), *Doluluk Oranı* ve *Yerleşen Sayısı* (ortalama azalan, **eşitlikte kontenjanı yüksek olan üstte**). |
 | **Yıllık çizgi grafikler** | Her satırın sonunda mini trend grafiği, panelde büyük grafik, altta ilk 7 + takip edilen kurumun karşılaştırma grafiği. Değer arttıkça çizgi yukarı çıkar. |
 | **Nokta detayı** | Grafik noktasının üzerine gelince yıl, puan türü, kontenjan, yerleşen, doluluk, en küçük ve en büyük puan görünür. |
 | **Takip edilen üniversite** | İlk 20 dışındaysa listenin altında, **21. sıra olarak değil, gerçek sırasıyla** gösterilir (ör. `34 | Üsküdar Üniversitesi`). |
@@ -110,6 +110,7 @@ Bir üniversitenin aynı programda birden çok varyantı olabilir (Burslu + %50 
 | En Büyük Puan | Varyantların **en yükseği** |
 | En Küçük Puan | Varyantların **en düşüğü** |
 | Doluluk Oranı | Toplam yerleşen / toplam kontenjan |
+| Yerleşen Sayısı | Varyantların yerleşen **toplamı** |
 
 > Vakıf üniversitelerinde en büyük puan çoğunlukla burslu kontenjandan gelir. Karşılaştırmayı daraltmak isteyen kullanıcı **Ücret / Burs** filtresinden yalnızca "Burslu" ya da yalnızca "Ücretli" seçebilir; tüm hesaplar filtreye göre yeniden yapılır.
 
@@ -123,6 +124,7 @@ Bir üniversitenin aynı programda birden çok varyantı olabilir (Burslu + %50 
 
 - **En Büyük Puan ölçütü:** üniversitenin veri bulunan yıllardaki en büyük puanlarının aritmetik ortalaması, **yüksekten düşüğe**.
 - **Doluluk Oranı ölçütü:** yıllık doluluk oranlarının aritmetik ortalaması, **yüksekten düşüğe**; **eşitlikte toplam kontenjanı yüksek olan üst sırada**.
+- **Yerleşen Sayısı ölçütü:** yıllık yerleşen sayılarının aritmetik ortalaması, **yüksekten düşüğe**; **eşitlikte toplam kontenjanı yüksek olan üst sırada**. Dönem toplamı değil ortalama kullanılır; böylece bazı yıllar açılmamış programlar yıl sayısı yüzünden geride kalmaz.
 - Program bazı yıllar açılmamışsa o yıl ortalamaya katılmaz (sıfır sayılmaz), grafikte çizgi kırılır.
 - Ölçüt için hiç değeri olmayan üniversiteler sıralamaya alınmaz, sıra numarası verilmez.
 
@@ -137,7 +139,7 @@ Bir üniversitenin aynı programda birden çok varyantı olabilir (Burslu + %50 
 
 ### 6. Grafik yönü
 
-Her iki ölçütte de **değer arttıkça çizgi yukarı çıkar**: en büyük puanın yükselmesi de doluluk oranının artması da grafikte yükseliş olarak görünür.
+Her ölçütte **değer arttıkça çizgi yukarı çıkar**: en büyük puanın yükselmesi de, doluluk oranının ya da yerleşen sayısının artması da grafikte yükseliş olarak görünür.
 
 ---
 
