@@ -174,7 +174,159 @@
      "İZMİR EKONOMİ ÜNİVERSİTESİ",
      100.0
     ]
-   ]
+   ],
+   "yilSiralari": {
+    "2021": {
+     "siralanan": 118,
+     "ilk5": [
+      [
+       "ZONGULDAK BÜLENT ECEVİT ÜNİVERSİTESİ",
+       1
+      ],
+      [
+       "ÜSKÜDAR ÜNİVERSİTESİ",
+       2
+      ],
+      [
+       "İSTANBUL MEDİPOL ÜNİVERSİTESİ",
+       3
+      ],
+      [
+       "NİŞANTAŞI ÜNİVERSİTESİ",
+       4
+      ],
+      [
+       "İZMİR DEMOKRASİ ÜNİVERSİTESİ",
+       5
+      ]
+     ]
+    },
+    "2022": {
+     "siralanan": 122,
+     "ilk5": [
+      [
+       "ORTA DOĞU TEKNİK ÜNİVERSİTESİ",
+       1
+      ],
+      [
+       "ZONGULDAK BÜLENT ECEVİT ÜNİVERSİTESİ",
+       2
+      ],
+      [
+       "HALİÇ ÜNİVERSİTESİ",
+       3
+      ],
+      [
+       "NİŞANTAŞI ÜNİVERSİTESİ",
+       4
+      ],
+      [
+       "ÜSKÜDAR ÜNİVERSİTESİ",
+       5
+      ]
+     ]
+    },
+    "2023": {
+     "siralanan": 126,
+     "ilk5": [
+      [
+       "İSTANBUL MEDİPOL ÜNİVERSİTESİ",
+       1
+      ],
+      [
+       "İSTANBUL NİŞANTAŞI ÜNİVERSİTESİ",
+       2
+      ],
+      [
+       "HALİÇ ÜNİVERSİTESİ",
+       3
+      ],
+      [
+       "İSTANBUL GELİŞİM ÜNİVERSİTESİ",
+       4
+      ],
+      [
+       "ZONGULDAK BÜLENT ECEVİT ÜNİVERSİTESİ",
+       5
+      ]
+     ]
+    },
+    "2024": {
+     "siralanan": 130,
+     "ilk5": [
+      [
+       "İSTANBUL MEDİPOL ÜNİVERSİTESİ",
+       1
+      ],
+      [
+       "İSTANBUL NİŞANTAŞI ÜNİVERSİTESİ",
+       2
+      ],
+      [
+       "HALİÇ ÜNİVERSİTESİ",
+       3
+      ],
+      [
+       "İSTANBUL GELİŞİM ÜNİVERSİTESİ",
+       4
+      ],
+      [
+       "İSTİNYE ÜNİVERSİTESİ",
+       5
+      ]
+     ]
+    },
+    "2025": {
+     "siralanan": 131,
+     "ilk5": [
+      [
+       "HALİÇ ÜNİVERSİTESİ",
+       1
+      ],
+      [
+       "ANKARA MEDİPOL ÜNİVERSİTESİ",
+       2
+      ],
+      [
+       "YAŞAR ÜNİVERSİTESİ",
+       3
+      ],
+      [
+       "ÇAĞ ÜNİVERSİTESİ",
+       4
+      ],
+      [
+       "YEDİTEPE ÜNİVERSİTESİ",
+       5
+      ]
+     ]
+    },
+    "2026": {
+     "siralanan": 132,
+     "ilk5": [
+      [
+       "İSTANBUL MEDİPOL ÜNİVERSİTESİ",
+       1
+      ],
+      [
+       "ANKARA MEDİPOL ÜNİVERSİTESİ",
+       2
+      ],
+      [
+       "DOĞUŞ ÜNİVERSİTESİ",
+       3
+      ],
+      [
+       "İSTANBUL AYDIN ÜNİVERSİTESİ",
+       4
+      ],
+      [
+       "ANKARA BİLİM ÜNİVERSİTESİ",
+       5
+      ]
+     ]
+    }
+   }
   },
   {
    "ad": "Hemşirelik · vakıf · doluluk",
@@ -409,7 +561,159 @@
      "İSTANBUL KENT ÜNİVERSİTESİ",
      114.0
     ]
-   ]
+   ],
+   "yilSiralari": {
+    "2021": {
+     "siralanan": 28,
+     "ilk5": [
+      [
+       "İSTANBUL MEDİPOL ÜNİVERSİTESİ",
+       1
+      ],
+      [
+       "ACIBADEM MEHMET ALİ AYDINLAR ÜNİVERSİTESİ",
+       2
+      ],
+      [
+       "BİRUNİ ÜNİVERSİTESİ",
+       3
+      ],
+      [
+       "İSTANBUL GELİŞİM ÜNİVERSİTESİ",
+       4
+      ],
+      [
+       "DEMİROĞLU BİLİM ÜNİVERSİTESİ",
+       5
+      ]
+     ]
+    },
+    "2022": {
+     "siralanan": 29,
+     "ilk5": [
+      [
+       "İSTANBUL MEDİPOL ÜNİVERSİTESİ",
+       1
+      ],
+      [
+       "HALİÇ ÜNİVERSİTESİ",
+       2
+      ],
+      [
+       "İSTANBUL GELİŞİM ÜNİVERSİTESİ",
+       3
+      ],
+      [
+       "BİRUNİ ÜNİVERSİTESİ",
+       4
+      ],
+      [
+       "ACIBADEM MEHMET ALİ AYDINLAR ÜNİVERSİTESİ",
+       5
+      ]
+     ]
+    },
+    "2023": {
+     "siralanan": 29,
+     "ilk5": [
+      [
+       "İSTANBUL MEDİPOL ÜNİVERSİTESİ",
+       1
+      ],
+      [
+       "HALİÇ ÜNİVERSİTESİ",
+       2
+      ],
+      [
+       "İSTANBUL GELİŞİM ÜNİVERSİTESİ",
+       3
+      ],
+      [
+       "BİRUNİ ÜNİVERSİTESİ",
+       4
+      ],
+      [
+       "ACIBADEM MEHMET ALİ AYDINLAR ÜNİVERSİTESİ",
+       5
+      ]
+     ]
+    },
+    "2024": {
+     "siralanan": 31,
+     "ilk5": [
+      [
+       "İSTANBUL MEDİPOL ÜNİVERSİTESİ",
+       1
+      ],
+      [
+       "HALİÇ ÜNİVERSİTESİ",
+       2
+      ],
+      [
+       "İSTANBUL GELİŞİM ÜNİVERSİTESİ",
+       3
+      ],
+      [
+       "BİRUNİ ÜNİVERSİTESİ",
+       4
+      ],
+      [
+       "ACIBADEM MEHMET ALİ AYDINLAR ÜNİVERSİTESİ",
+       5
+      ]
+     ]
+    },
+    "2025": {
+     "siralanan": 32,
+     "ilk5": [
+      [
+       "İSTANBUL MEDİPOL ÜNİVERSİTESİ",
+       1
+      ],
+      [
+       "ACIBADEM MEHMET ALİ AYDINLAR ÜNİVERSİTESİ",
+       2
+      ],
+      [
+       "BİRUNİ ÜNİVERSİTESİ",
+       3
+      ],
+      [
+       "İSTANBUL GELİŞİM ÜNİVERSİTESİ",
+       4
+      ],
+      [
+       "HALİÇ ÜNİVERSİTESİ",
+       5
+      ]
+     ]
+    },
+    "2026": {
+     "siralanan": 32,
+     "ilk5": [
+      [
+       "İSTANBUL MEDİPOL ÜNİVERSİTESİ",
+       1
+      ],
+      [
+       "ACIBADEM MEHMET ALİ AYDINLAR ÜNİVERSİTESİ",
+       2
+      ],
+      [
+       "BİRUNİ ÜNİVERSİTESİ",
+       3
+      ],
+      [
+       "İSTANBUL GELİŞİM ÜNİVERSİTESİ",
+       4
+      ],
+      [
+       "HALİÇ ÜNİVERSİTESİ",
+       5
+      ]
+     ]
+    }
+   }
   },
   {
    "ad": "Moleküler Biyoloji ve Genetik · İstanbul vakıf · doluluk · İngilizce",

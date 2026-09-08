@@ -23,6 +23,11 @@ const ON_AYARLAR = [
   { kod: "ist-vakif", ad: "İstanbul – Vakıf", bolge: { tip: "IST" }, tur: { tip: "GRUP", deger: "vakif" } },
 ];
 
+const HUCRE_SECENEKLERI = [
+  ["deger", "Değer", "Yıl sütunlarında seçili ölçütün değeri"],
+  ["sira", "Kapsamdaki sıra", "Yıl sütunlarında üniversitenin o yıl seçili kapsamdaki sırası / sıralanan üniversite"],
+];
+
 let veri = null;
 let filtre = null;
 let sonSonuc = null;
@@ -78,6 +83,7 @@ function varsayilanFiltre() {
     bolge: { ...kapsam.bolge },
     tur: { ...kapsam.tur },
     olcut: "puan",
+    hucre: "deger",      // yıl hücreleri: ölçüt değeri | "sira" = kapsamdaki yıl sırası (#8)
     takip: vurgulanan ? vurgulanan.indeks : null,
     // Kurum görünümü (#3): görünüm, program kümesi, elle seçim ve doluluk eşiği
     gorunum: "program",
@@ -201,6 +207,22 @@ function kontrolleriDoldur() {
       yenile();
     });
     onAyarKap.append(cip);
+  }
+
+  // yıl hücresi: değer / kapsamdaki sıra (#8)
+  const hucreKap = $("#hucre-listesi");
+  for (const [kod, etiket, aciklama] of HUCRE_SECENEKLERI) {
+    const cip = document.createElement("button");
+    cip.type = "button";
+    cip.className = "cip";
+    cip.textContent = etiket;
+    cip.title = aciklama;
+    cip.dataset.hucre = kod;
+    cip.addEventListener("click", () => {
+      filtre.hucre = kod;
+      yenile();
+    });
+    hucreKap.append(cip);
   }
 
   kurumKontrolleriniDoldur();
@@ -416,6 +438,9 @@ function kontrolleriGuncelle() {
   for (const cip of document.querySelectorAll("#yil-cipleri .cip")) {
     cip.setAttribute("aria-pressed", filtre.yillar[Number(cip.dataset.yil)] ? "true" : "false");
   }
+  for (const cip of document.querySelectorAll("#hucre-listesi .cip")) {
+    cip.setAttribute("aria-pressed", cip.dataset.hucre === filtre.hucre ? "true" : "false");
+  }
   for (const cip of document.querySelectorAll("#on-ayar-listesi .cip")) {
     const onAyar = ON_AYARLAR.find((kayit) => kayit.kod === cip.dataset.onayar);
     const uyum =
@@ -566,6 +591,47 @@ function metrikBicim(deger) {
   return puan(deger);
 }
 
+/** Üniversitenin o yıl seçili kapsamdaki sırası (yoksa null). */
+function yilSirasi(satir, yilIndeksi) {
+  return satir.yillikSira?.[yilIndeksi] ?? null;
+}
+
+/** "5 / 42" — yıl sırası / o yıl sıralanan üniversite sayısı. */
+function yilSirasiMetni(satir, yilIndeksi) {
+  const sira = yilSirasi(satir, yilIndeksi);
+  return sira == null ? "—" : `${sira} / ${satir.yillikSiralanan[yilIndeksi]}`;
+}
+
+/** Sıra modu açık mı? Yıl hücreleri ve grafikler değer yerine kapsamdaki sırayı gösterir. */
+const siraModu = () => filtre.hucre === "sira";
+
+/** Yıl hücresinde gösterilecek sayı: sıra modunda sıra, değilse ölçüt değeri. */
+function hucreDegeri(satir, yilIndeksi) {
+  return siraModu() ? yilSirasi(satir, yilIndeksi) : metrikDegeri(satir, yilIndeksi);
+}
+
+function hucreMetni(satir, yilIndeksi) {
+  if (siraModu()) return yilSirasiMetni(satir, yilIndeksi);
+  const deger = metrikDegeri(satir, yilIndeksi);
+  return deger == null ? "—" : metrikBicim(deger);
+}
+
+/** Grafik seçenekleri: sıra modunda ters eksen (1. sıra üstte), tam sayı etiketler. */
+function grafikEksenSecenekleri() {
+  if (siraModu()) {
+    return { tersEksen: true, enAz: 1, eksenBicim: (deger) => `${Math.round(deger)}.`, enFazla: null };
+  }
+  return {
+    eksenBicim: (deger) => (filtre.olcut === "doluluk" ? `${Math.round(deger)}%` : Math.round(deger)),
+    enFazla: filtre.olcut === "doluluk" ? 155 : null,
+  };
+}
+
+/** Grafik başlığındaki ölçüt adı: sıra modunda "… sırası". */
+function grafikOlcutAdi() {
+  return siraModu() ? `${OLCUT[filtre.olcut].ad} sırası` : OLCUT[filtre.olcut].ad;
+}
+
 /** Ölçütün fark gösterimi: puan 2 ondalık, doluluk 1 ondalık + "pp", yerleşen tam sayı. */
 function metrikDegisim(fark) {
   if (filtre.olcut === "doluluk") return degisim(fark, 1) + (fark == null ? "" : " pp");
@@ -588,7 +654,9 @@ function tabloCiz(sonuc) {
   const { ilkler, takip } = gosterilecekSatirlar(sonuc, filtre.takip, AYAR.ilkN);
 
   $("#tablo-baslik").textContent = `${programBasligi()} — İlk ${AYAR.ilkN}`;
-  $("#tablo-aciklama").textContent = `${olcut.aciklama}. ${kapsamAdi()}.`;
+  $("#tablo-aciklama").textContent =
+    `${olcut.aciklama}. ${kapsamAdi()}.` +
+    (siraModu() ? ` Yıl sütunları: o yıl ${kapsamAdi()} kapsamındaki sıra / sıralanan üniversite.` : "");
 
   const bas = $("#tablo-bas");
   bas.innerHTML = "";
@@ -600,7 +668,7 @@ function tabloCiz(sonuc) {
     hucre("th", "Ortalama"),
     hucre("th", "Kontenjan"),
     hucre("th", "Yerleşen"),
-    hucre("th", `${olcut.kisa} değişimi`, "grafik")
+    hucre("th", siraModu() ? "Sıra değişimi" : `${olcut.kisa} değişimi`, "grafik")
   );
   bas.append(basSatir);
 
@@ -686,10 +754,11 @@ function satirCiz(satir, yilIndeksleri) {
   tr.append(uniHucre);
 
   for (const yilIndeksi of yilIndeksleri) {
-    const deger = metrikDegeri(satir, yilIndeksi);
-    const td = hucre("td", deger == null ? "—" : metrikBicim(deger));
+    const deger = hucreDegeri(satir, yilIndeksi);
+    const td = hucre("td", hucreMetni(satir, yilIndeksi));
     if (deger == null) td.classList.add("bos-veri");
     else td.title = hucreBaslik(satir, yilIndeksi);
+    if (siraModu()) td.classList.add("sira-hucre");
     tr.append(td);
   }
 
@@ -703,10 +772,10 @@ function satirCiz(satir, yilIndeksleri) {
     sparkline(
       yilIndeksleri.map((yilIndeksi) => ({
         yil: veri.meta.yillar[yilIndeksi],
-        deger: metrikDegeri(satir, yilIndeksi),
+        deger: hucreDegeri(satir, yilIndeksi),
         ipucu: ipucuIcerigi(satir, yilIndeksi),
       })),
-      { renk: takipMi ? "var(--takip)" : "var(--vurgu-acik)", etiket: `${satir.uni.ad} yıllara göre değişim` }
+      { renk: takipMi ? "var(--takip)" : "var(--vurgu-acik)", etiket: `${satir.uni.ad} yıllara göre değişim`, tersEksen: siraModu() }
     )
   );
   tr.append(grafikHucre);
@@ -728,6 +797,7 @@ function hucreBaslik(satir, yilIndeksi) {
     `Kontenjan: ${sayi(hucre.kontenjan)} · Yerleşen: ${sayi(hucre.yerlesen)}`,
     `Doluluk: ${yuzde(hucre.doluluk)}`,
     `En küçük: ${puan(hucre.enKucuk)} · En büyük: ${puan(hucre.enBuyuk)}`,
+    `${OLCUT[filtre.olcut].kisa} sırası (${kapsamAdi()}): ${yilSirasiMetni(satir, yilIndeksi)}`,
   ].join("\n");
 }
 
@@ -745,6 +815,7 @@ function ipucuIcerigi(satir, yilIndeksi) {
     ["Doluluk", yuzde(hucre.doluluk)],
     ["En küçük puan", puan(hucre.enKucuk)],
     ["En büyük puan", puan(hucre.enBuyuk)],
+    [`${OLCUT[filtre.olcut].kisa} sırası`, yilSirasiMetni(satir, yilIndeksi)],
   ]
     .map(([etiket, deger]) => `<dt>${kacis(etiket)}</dt><dd>${kacis(String(deger))}</dd>`)
     .join("");
@@ -804,7 +875,7 @@ function detayCiz() {
           vurgulu: true,
           noktalar: yilIndeksleri.map((yilIndeksi) => ({
             yil: veri.meta.yillar[yilIndeksi],
-            deger: metrikDegeri(hedef, yilIndeksi),
+            deger: hucreDegeri(hedef, yilIndeksi),
             ipucu: ipucuIcerigi(hedef, yilIndeksi),
           })),
         },
@@ -814,9 +885,8 @@ function detayCiz() {
         genislik: 360,
         yukseklik: 190,
         solKenar: 46,
-        eksenBicim: (deger) => (filtre.olcut === "doluluk" ? `${Math.round(deger)}%` : Math.round(deger)),
-        enFazla: filtre.olcut === "doluluk" ? 155 : null,
-        etiket: `${hedef.uni.ad} ${OLCUT[filtre.olcut].ad} değişimi`,
+        ...grafikEksenSecenekleri(),
+        etiket: `${hedef.uni.ad} ${grafikOlcutAdi()} değişimi`,
       }
     )
   );
@@ -825,7 +895,7 @@ function detayCiz() {
   const tablo = document.createElement("table");
   tablo.className = "detay-tablo";
   tablo.innerHTML =
-    "<thead><tr><th>Yıl</th><th>Kont.</th><th>Yerl.</th><th>Doluluk</th><th>En küçük</th><th>En büyük</th></tr></thead>";
+    "<thead><tr><th>Yıl</th><th>Kont.</th><th>Yerl.</th><th>Doluluk</th><th>En küçük</th><th>En büyük</th><th>Sıra</th></tr></thead>";
   const govde = document.createElement("tbody");
   for (const yilIndeksi of yilIndeksleri) {
     const hucreVerisi = hedef.yillik[yilIndeksi];
@@ -833,7 +903,7 @@ function detayCiz() {
     tr.append(hucre("td", String(veri.meta.yillar[yilIndeksi])));
     if (!hucreVerisi) {
       const bos = hucre("td", "program yok");
-      bos.colSpan = 5;
+      bos.colSpan = 6;
       bos.className = "bos-veri";
       bos.style.textAlign = "center";
       tr.append(bos);
@@ -845,11 +915,17 @@ function detayCiz() {
         hucre("td", puan(hucreVerisi.enKucuk)),
         hucre("td", puan(hucreVerisi.enBuyuk))
       );
+      const siraHucre = hucre("td", yilSirasiMetni(hedef, yilIndeksi).replace(" / ", "/"), "sira-hucre");
+      siraHucre.title = `${veri.meta.yillar[yilIndeksi]} · ${kapsamAdi()} kapsamında ${OLCUT[filtre.olcut].kisa.toLocaleLowerCase("tr")} sırası / sıralanan üniversite`;
+      tr.append(siraHucre);
     }
     govde.append(tr);
   }
   tablo.append(govde);
-  kap.append(tablo);
+  const tabloKaydir = document.createElement("div");
+  tabloKaydir.className = "tablo-kaydir";
+  tabloKaydir.append(tablo);
+  kap.append(tabloKaydir);
 
   const ozetSatir = document.createElement("p");
   ozetSatir.className = "detay-varyant";
@@ -999,7 +1075,7 @@ function karsilastirmaCiz(sonuc) {
   }
 
   $("#karsilastirma-alt").textContent =
-    `İlk ${ilkler.length} üniversite${takipSatir ? " + " + takipSatir.uni.ad : ""} · ${OLCUT[filtre.olcut].ad}`;
+    `İlk ${ilkler.length} üniversite${takipSatir ? " + " + takipSatir.uni.ad : ""} · ${grafikOlcutAdi()}`;
 
   const seriler = gosterilecek.map((satir, indeks) => ({
     ad: satir.uni.ad,
@@ -1007,7 +1083,7 @@ function karsilastirmaCiz(sonuc) {
     vurgulu: satir === takipSatir,
     noktalar: yilIndeksleri.map((yilIndeksi) => ({
       yil: veri.meta.yillar[yilIndeksi],
-      deger: metrikDegeri(satir, yilIndeksi),
+      deger: hucreDegeri(satir, yilIndeksi),
       ipucu: ipucuIcerigi(satir, yilIndeksi),
     })),
   }));
@@ -1017,9 +1093,8 @@ function karsilastirmaCiz(sonuc) {
       yillar: yilIndeksleri.map((indeks) => veri.meta.yillar[indeks]),
       genislik: 1000,
       yukseklik: 340,
-      eksenBicim: (deger) => (filtre.olcut === "doluluk" ? `${Math.round(deger)}%` : Math.round(deger)),
-      enFazla: filtre.olcut === "doluluk" ? 155 : null,
-      etiket: `İlk üniversitelerin ${OLCUT[filtre.olcut].ad} değişimi`,
+      ...grafikEksenSecenekleri(),
+      etiket: `İlk üniversitelerin ${grafikOlcutAdi()} değişimi`,
     })
   );
 
@@ -1108,7 +1183,7 @@ function kumeyeDahil(satir, kume = filtre.kume) {
   return anahtarlar.has(kumeAnahtari(satir.etiket));
 }
 
-/** Kurum görünümünde bir satırın ölçüt değeri (doluluk ya da en büyük puan). */
+/** Kurum görünümünde bir satırın ölçüt değeri (doluluk, en büyük puan ya da yerleşen). */
 function kurumMetrik(satir, yilIndeksi) {
   return metrikDegeri(satir.satir, yilIndeksi);
 }
@@ -1178,7 +1253,9 @@ function kurumCiz(sonuc) {
   // --- başlık
   $("#kurum-baslik").textContent = `${kurum ?? "Kurum"} — ${kumeAdi()}`;
   $("#kurum-aciklama").textContent =
-    `${olcut.ad}; sıra sütunu ${kapsamAdi()} kapsamındaki gerçek sıra / sıralanan üniversite. Satıra tıklayınca o programın karşılaştırmasına geçilir.`;
+    `${olcut.ad}; sıra sütunu ${kapsamAdi()} kapsamındaki gerçek sıra / sıralanan üniversite.` +
+    (siraModu() ? ` Yıl sütunları: o yıl aynı kapsamdaki sıra / sıralanan üniversite.` : "") +
+    ` Satıra tıklayınca o programın karşılaştırmasına geçilir.`;
   $("#kurum-lejant").innerHTML = "";
   if (filtre.olcut === "doluluk") {
     const lejant = document.createElement("span");
@@ -1215,7 +1292,7 @@ function kurumCiz(sonuc) {
     hucre("th", "Yerleşen"),
     hucre("th", "Son 2 yıl"),
     hucre("th", "Sıra"),
-    hucre("th", `${olcut.kisa} değişimi`, "grafik")
+    hucre("th", siraModu() ? "Sıra değişimi" : `${olcut.kisa} değişimi`, "grafik")
   );
   bas.append(basSatir);
 
@@ -1246,7 +1323,7 @@ function kurumCiz(sonuc) {
     tr.append(hucre("td", "", "sec"), hucre("td", `Toplam (${gorunen.length} program)`, "sol"));
     for (const yilIndeksi of yilIndeksleri) {
       const t = toplam.yillik[yilIndeksi];
-      const deger = toplamMetrik(toplam, yilIndeksi);
+      const deger = siraModu() ? null : toplamMetrik(toplam, yilIndeksi); // kümenin sırası tanımsız
       const td = hucre("td", deger == null ? "—" : metrikBicim(deger));
       if (esikAltiMi(deger)) td.classList.add("esik-alti");
       if (t) td.title = `Kontenjan: ${sayi(t.kontenjan)} · Yerleşen: ${sayi(t.yerlesen)}`;
@@ -1316,13 +1393,14 @@ function kurumSatiri(satir, yilIndeksleri) {
   tr.append(adHucre);
 
   for (const yilIndeksi of yilIndeksleri) {
-    const deger = kurumMetrik(satir, yilIndeksi);
-    const td = hucre("td", deger == null ? "—" : metrikBicim(deger));
+    const deger = hucreDegeri(satir.satir, yilIndeksi);
+    const td = hucre("td", hucreMetni(satir.satir, yilIndeksi));
     if (deger == null) td.classList.add("bos-veri");
     else {
       td.title = hucreBaslik(satir.satir, yilIndeksi);
-      if (esikAltiMi(deger)) td.classList.add("esik-alti");
+      if (!siraModu() && esikAltiMi(deger)) td.classList.add("esik-alti");
     }
+    if (siraModu()) td.classList.add("sira-hucre");
     tr.append(td);
   }
 
@@ -1347,10 +1425,10 @@ function kurumSatiri(satir, yilIndeksleri) {
     sparkline(
       yilIndeksleri.map((yilIndeksi) => ({
         yil: veri.meta.yillar[yilIndeksi],
-        deger: kurumMetrik(satir, yilIndeksi),
+        deger: hucreDegeri(satir.satir, yilIndeksi),
         ipucu: ipucuIcerigi(satir.satir, yilIndeksi),
       })),
-      { renk: "var(--vurgu-acik)", etiket: `${satir.etiket} yıllara göre değişim` }
+      { renk: "var(--vurgu-acik)", etiket: `${satir.etiket} yıllara göre değişim`, tersEksen: siraModu() }
     )
   );
   tr.append(grafikHucre);
@@ -1382,14 +1460,14 @@ function kurumGrafikCiz(gorunen, yilIndeksleri) {
     return;
   }
   panel.hidden = false;
-  $("#kurum-grafik-alt").textContent = `${gorunen.length} program · ${OLCUT[filtre.olcut].ad}`;
+  $("#kurum-grafik-alt").textContent = `${gorunen.length} program · ${grafikOlcutAdi()}`;
 
   const seriler = gorunen.map((satir, indeks) => ({
     ad: satir.etiket,
     renk: SERI_RENKLERI[indeks % SERI_RENKLERI.length],
     noktalar: yilIndeksleri.map((yilIndeksi) => ({
       yil: veri.meta.yillar[yilIndeksi],
-      deger: kurumMetrik(satir, yilIndeksi),
+      deger: hucreDegeri(satir.satir, yilIndeksi),
       ipucu: ipucuIcerigi(satir.satir, yilIndeksi),
     })),
   }));
@@ -1398,9 +1476,8 @@ function kurumGrafikCiz(gorunen, yilIndeksleri) {
       yillar: yilIndeksleri.map((indeks) => veri.meta.yillar[indeks]),
       genislik: 1000,
       yukseklik: 340,
-      eksenBicim: (deger) => (filtre.olcut === "doluluk" ? `${Math.round(deger)}%` : Math.round(deger)),
-      enFazla: filtre.olcut === "doluluk" ? 155 : null,
-      etiket: `Programların ${OLCUT[filtre.olcut].ad} değişimi`,
+      ...grafikEksenSecenekleri(),
+      etiket: `Programların ${grafikOlcutAdi()} değişimi`,
     })
   );
   for (const seri of seriler) {
@@ -1420,6 +1497,8 @@ function kurumCsv() {
     "Program", "Öğretim dili",
     ...yilIndeksleri.map((indeks) => String(veri.meta.yillar[indeks])),
     "Ortalama", "Toplam kontenjan", "Toplam yerleşen", "Genel doluluk %", "Son 2 yıl farkı", "Sıra", "Sıralanan",
+    // Yıl bazında kapsam sırası ve payda (#8) — hücre modundan bağımsız, her zaman
+    ...yilIndeksleri.flatMap((indeks) => [`${veri.meta.yillar[indeks]} sıra`, `${veri.meta.yillar[indeks]} sıralanan`]),
   ];
   const satirlar = gorunen.map((satir) => [
     satir.etiket,
@@ -1432,6 +1511,7 @@ function kurumCsv() {
     sayiCsv(satir.sonFark),
     satir.sira ?? "",
     satir.siralanan,
+    ...yilIndeksleri.flatMap((yilIndeksi) => yilSiraCsv(satir.satir, yilIndeksi)),
   ]);
   if (gorunen.length > 1) {
     satirlar.push([
@@ -1439,6 +1519,7 @@ function kurumCsv() {
       ...yilIndeksleri.map((yilIndeksi) => sayiCsv(toplamMetrik(toplam, yilIndeksi))),
       sayiCsv(toplamOrtalamasi(toplam, yilIndeksleri)),
       toplam.kontenjan, toplam.yerlesen, sayiCsv(toplam.doluluk), "", "", "",
+      ...yilIndeksleri.flatMap(() => ["", ""]),
     ]);
   }
   return {
@@ -1462,6 +1543,7 @@ function csvIndir() {
     "Sıra", "Üniversite", "Şehir", "Tür", "Öğretim dili",
     ...yilIndeksleri.map((indeks) => String(veri.meta.yillar[indeks])),
     "Ortalama", "Toplam kontenjan", "Toplam yerleşen", "Genel doluluk %",
+    ...yilIndeksleri.flatMap((indeks) => [`${veri.meta.yillar[indeks]} sıra`, `${veri.meta.yillar[indeks]} sıralanan`]),
   ];
   const satirlar = [...ilkler, ...(takip ? [takip] : [])].map((satir) => [
     satir.sira ?? "",
@@ -1475,6 +1557,7 @@ function csvIndir() {
     satir.toplamKontenjan,
     satir.toplamYerlesen,
     sayiCsv(satir.genelDoluluk),
+    ...yilIndeksleri.flatMap((yilIndeksi) => yilSiraCsv(satir, yilIndeksi)),
   ]);
 
   csvYaz({
@@ -1483,6 +1566,12 @@ function csvIndir() {
     satirlar,
     dosyaAdi: `yks-${aramaAnahtari(programBasligi()).replace(/ /g, "-")}-${filtre.olcut}.csv`,
   });
+}
+
+/** CSV için [sıra, sıralanan] çifti; o yıl veri yoksa iki boş hücre. */
+function yilSiraCsv(satir, yilIndeksi) {
+  const sira = yilSirasi(satir, yilIndeksi);
+  return sira == null ? ["", ""] : [sira, satir.yillikSiralanan[yilIndeksi]];
 }
 
 /** Tabloyu noktalı virgülle ayrılmış, BOM'lu UTF-8 CSV olarak indirir (Excel tr-TR uyumlu). */
@@ -1514,6 +1603,7 @@ function urlYaz_() {
   parametreler.set("b", filtre.bolge.tip === "SEHIR" ? `SEHIR:${filtre.bolge.sehir}` : filtre.bolge.tip);
   parametreler.set("t", filtre.tur.tip === "GRUP" ? `GRUP:${filtre.tur.deger}` : filtre.tur.tip === "TUR" ? `TUR:${filtre.tur.deger}` : filtre.tur.tip);
   parametreler.set("o", filtre.olcut);
+  if (filtre.hucre === "sira") parametreler.set("h", "sira");
   if (filtre.seviye != null) parametreler.set("s", filtre.seviye);
   if (filtre.puanTuru != null) parametreler.set("pt", filtre.puanTuru);
   if (filtre.dil != null) parametreler.set("d", filtre.dil);
@@ -1551,6 +1641,7 @@ function urldenOku() {
         : { tip: tur };
   }
   if (parametreler.get("o")) filtre.olcut = OLCUT[parametreler.get("o")] ? parametreler.get("o") : "puan";
+  filtre.hucre = parametreler.get("h") === "sira" ? "sira" : "deger";
   const sayisal = { s: "seviye", pt: "puanTuru", d: "dil", u: "ucret", og: "ogretim" };
   for (const [anahtar, alan] of Object.entries(sayisal)) {
     const deger = parametreler.get(anahtar);
